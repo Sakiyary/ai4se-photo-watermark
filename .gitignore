@@ -205,3 +205,16 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Project specific
+test_images/
+demo_photos/
+*_watermark/
+*.jpg
+*.jpeg
+*.png
+*.tiff
+*.tif
+*.bmp
+test_watermark.py
+demo.py
