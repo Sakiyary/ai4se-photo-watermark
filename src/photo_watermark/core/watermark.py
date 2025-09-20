@@ -306,15 +306,19 @@ class WatermarkRenderer:
         # Handle hex colors
         if color_str.startswith("#"):
             hex_color = color_str[1:]
-            if len(hex_color) == 3:
-                # Short hex format (#RGB)
-                return tuple(int(hex_color[i] * 2, 16) for i in range(3))
-            elif len(hex_color) == 6:
-                # Full hex format (#RRGGBB)
-                return tuple(int(hex_color[i:i+2], 16) for i in range(0, 6, 2))
-            elif len(hex_color) == 8:
-                # Full hex with alpha (#RRGGBBAA)
-                return tuple(int(hex_color[i:i+2], 16) for i in range(0, 8, 2))
+            try:
+                if len(hex_color) == 3:
+                    # Short hex format (#RGB)
+                    return tuple(int(hex_color[i] * 2, 16) for i in range(3))
+                elif len(hex_color) == 6:
+                    # Full hex format (#RRGGBB)
+                    return tuple(int(hex_color[i:i+2], 16) for i in range(0, 6, 2))
+                elif len(hex_color) == 8:
+                    # Full hex with alpha (#RRGGBBAA)
+                    return tuple(int(hex_color[i:i+2], 16) for i in range(0, 8, 2))
+            except ValueError:
+                # Invalid hex format, fall through to default
+                pass
         
         # Handle RGB/RGBA format "rgb(r,g,b)" or "rgba(r,g,b,a)"
         if color_str.startswith(("rgb(", "rgba(")):
@@ -323,7 +327,9 @@ class WatermarkRenderer:
             try:
                 values = [int(v.strip()) for v in values_str.split(",")]
                 if len(values) in (3, 4):
-                    return tuple(values)
+                    # Validate RGB values are in valid range (0-255)
+                    if all(0 <= v <= 255 for v in values):
+                        return tuple(values)
             except ValueError:
                 pass
         
