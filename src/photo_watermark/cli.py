@@ -25,10 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 def print_progress(current: int, total: int, filename: str, success: bool):
-    """Print progress information."""
-    status = "✓" if success else "✗"
-    percentage = (current / total) * 100
-    click.echo(f"[{current}/{total}] {status} {filename} ({percentage:.1f}%)")
+  """Print progress information."""
+  status = "✓" if success else "✗"
+  percentage = (current / total) * 100
+  click.echo(f"[{current}/{total}] {status} {filename} ({percentage:.1f}%)")
 
 
 @click.command()
@@ -61,106 +61,107 @@ def main(
     verbose: bool,
     quiet: bool
 ):
-    """Add date watermarks to photos using EXIF data."""
-    
-    # Configure logging level
+  """Add date watermarks to photos using EXIF data."""
+
+  # Configure logging level
+  if verbose:
+    logging.getLogger().setLevel(logging.DEBUG)
+  elif quiet:
+    logging.getLogger().setLevel(logging.WARNING)
+
+  try:
+    # Validate parameters
+    font_size = validate_font_size(font_size)
+    color = validate_color(color)
+    position_enum = validate_position(position)
+    margin = validate_margin(margin)
+    opacity = validate_opacity(opacity)
+    outline_color = validate_color(outline_color)
+
+    # Create watermark configuration
+    config = WatermarkConfig(
+        font_size=font_size,
+        color=color,
+        position=position_enum,
+        margin=margin,
+        opacity=opacity,
+        outline_width=outline_width,
+        outline_color=outline_color,
+        font_path=str(font_path) if font_path else None
+    )
+
+    # Initialize image processor
+    processor = ImageProcessor()
+
+    # Show configuration if verbose
     if verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-    elif quiet:
-        logging.getLogger().setLevel(logging.WARNING)
-    
-    try:
-        # Validate parameters
-        font_size = validate_font_size(font_size)
-        color = validate_color(color)
-        position_enum = validate_position(position)
-        margin = validate_margin(margin)
-        opacity = validate_opacity(opacity)
-        outline_color = validate_color(outline_color)
-        
-        # Create watermark configuration
-        config = WatermarkConfig(
-            font_size=font_size,
-            color=color,
-            position=position_enum,
-            margin=margin,
-            opacity=opacity,
-            outline_width=outline_width,
-            outline_color=outline_color,
-            font_path=str(font_path) if font_path else None
-        )
-        
-        # Initialize image processor
-        processor = ImageProcessor()
-        
-        # Show configuration if verbose
-        if verbose:
-            click.echo("Configuration:")
-            click.echo(f"  Font size: {config.font_size}")
-            click.echo(f"  Color: {config.color}")
-            click.echo(f"  Position: {config.position.value}")
-            click.echo(f"  Margin: {config.margin}")
-            click.echo(f"  Opacity: {config.opacity}")
-            click.echo(f"  Outline: {config.outline_width}px {config.outline_color}")
-            if config.font_path:
-                click.echo(f"  Font: {config.font_path}")
-            click.echo("")
-        
-        # Check if input is supported
-        if input_path.is_file() and not processor.is_supported_format(input_path):
-            click.echo(f"Error: Unsupported file format: {input_path.suffix}", err=True)
-            click.echo("Supported formats: .jpg, .jpeg, .tiff, .tif", err=True)
-            sys.exit(1)
-        
-        # Setup progress callback
-        progress_callback = None if quiet else print_progress
-        
-        # Process images
-        click.echo(f"Processing: {input_path}")
-        
-        processed, total = processor.process_path(
-            input_path, 
-            config, 
-            output_path=output,
-            progress_callback=progress_callback
-        )
-        
-        # Show summary
-        if not quiet:
-            click.echo("\\nSummary:")
-            click.echo(f"  Processed: {processed} images")
-            if total > processed:
-                click.echo(f"  Skipped: {total - processed} images")
-            click.echo(f"  Total: {total} images")
-            
-            if input_path.is_dir():
-                output_dir = input_path.parent / f"{input_path.name}_watermark"
-                click.echo(f"  Output directory: {output_dir}")
-            elif output:
-                click.echo(f"  Output file: {output}")
-        
-        if processed == 0:
-            if total == 0:
-                click.echo("No supported image files found.", err=True)
-            else:
-                click.echo("No images were processed successfully.", err=True)
-            sys.exit(1)
-        
-        click.echo("Completed successfully!")
-        
-    except PhotoWatermarkError as e:
-        click.echo(f"Error: {str(e)}", err=True)
-        sys.exit(1)
-    except KeyboardInterrupt:
-        click.echo("\\nOperation cancelled by user.", err=True)
-        sys.exit(1)
-    except Exception as e:
-        if verbose:
-            import traceback
-            traceback.print_exc()
-        click.echo(f"Unexpected error: {str(e)}", err=True)
-        sys.exit(1)
+      click.echo("Configuration:")
+      click.echo(f"  Font size: {config.font_size}")
+      click.echo(f"  Color: {config.color}")
+      click.echo(f"  Position: {config.position.value}")
+      click.echo(f"  Margin: {config.margin}")
+      click.echo(f"  Opacity: {config.opacity}")
+      click.echo(f"  Outline: {config.outline_width}px {config.outline_color}")
+      if config.font_path:
+        click.echo(f"  Font: {config.font_path}")
+      click.echo("")
+
+    # Check if input is supported
+    if input_path.is_file() and not processor.is_supported_format(input_path):
+      click.echo(
+          f"Error: Unsupported file format: {input_path.suffix}", err=True)
+      click.echo("Supported formats: .jpg, .jpeg, .tiff, .tif", err=True)
+      sys.exit(1)
+
+    # Setup progress callback
+    progress_callback = None if quiet else print_progress
+
+    # Process images
+    click.echo(f"Processing: {input_path}")
+
+    processed, total = processor.process_path(
+        input_path,
+        config,
+        output_path=output,
+        progress_callback=progress_callback
+    )
+
+    # Show summary
+    if not quiet:
+      click.echo("\\nSummary:")
+      click.echo(f"  Processed: {processed} images")
+      if total > processed:
+        click.echo(f"  Skipped: {total - processed} images")
+      click.echo(f"  Total: {total} images")
+
+      if input_path.is_dir():
+        output_dir = input_path.parent / f"{input_path.name}_watermark"
+        click.echo(f"  Output directory: {output_dir}")
+      elif output:
+        click.echo(f"  Output file: {output}")
+
+    if processed == 0:
+      if total == 0:
+        click.echo("No supported image files found.", err=True)
+      else:
+        click.echo("No images were processed successfully.", err=True)
+      sys.exit(1)
+
+    click.echo("Completed successfully!")
+
+  except PhotoWatermarkError as e:
+    click.echo(f"Error: {str(e)}", err=True)
+    sys.exit(1)
+  except KeyboardInterrupt:
+    click.echo("\\nOperation cancelled by user.", err=True)
+    sys.exit(1)
+  except Exception as e:
+    if verbose:
+      import traceback
+      traceback.print_exc()
+    click.echo(f"Unexpected error: {str(e)}", err=True)
+    sys.exit(1)
 
 
 if __name__ == '__main__':
-    main()
+  main()

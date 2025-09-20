@@ -20,12 +20,14 @@ A Python command-line tool for adding date watermarks to photos using EXIF data.
 ### From Source
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Sakiyary/ai4se-photo-watermark.git
 cd ai4se-photo-watermark
 ```
 
 2. Create and activate a virtual environment:
+
 ```bash
 python -m venv venv
 
@@ -37,6 +39,7 @@ source venv/bin/activate
 ```
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -52,11 +55,13 @@ pip install -e .
 ### Basic Usage
 
 Add watermarks to all images in a directory:
+
 ```bash
 python -m photo_watermark /path/to/photos
 ```
 
 Process a single image:
+
 ```bash
 python -m photo_watermark /path/to/photo.jpg
 ```
@@ -106,6 +111,7 @@ python -m photo_watermark /path/to/photos --opacity 128
 ## Examples
 
 ### Directory Processing
+
 ```bash
 # Process all images in 'vacation_photos' directory
 python -m photo_watermark ./vacation_photos
@@ -114,6 +120,7 @@ python -m photo_watermark ./vacation_photos
 ```
 
 ### Custom Styling Examples
+
 ```bash
 # Large golden text in bottom-left with custom margin
 python -m photo_watermark ./photos --font-size 40 --color "#FFD700" --position bottom-left --margin 20
@@ -126,6 +133,7 @@ python -m photo_watermark ./photos --font-path "/path/to/font.ttf" --outline-wid
 ```
 
 ### Single File Processing
+
 ```bash
 # Process single file with custom output location
 python -m photo_watermark photo.jpg --output watermarked_photo.jpg
