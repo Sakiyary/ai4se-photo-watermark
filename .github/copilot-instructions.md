@@ -2,42 +2,60 @@
 
 ## 项目概览
 
-本项目 `ai4se-photo-watermark` 是一个Python命令行工具，用于读取图片EXIF信息中的拍摄时间，并将其作为水印添加到图片上。项目已完成基础架构设计和项目初始化。
+本项目 `ai4se-photo-watermark` 是一个跨平台的桌面水印工具，使用 Python + Tkinter 开发，提供图形化界面，支持为图片批量添加文本和图片水印。项目已从命令行工具重构为 GUI 应用程序。
 
 ## 目录结构
 
 ```
-src/photo_watermark/          # 主要代码包
-├── __init__.py              # 包初始化，版本信息
-├── __main__.py              # CLI入口点 (python -m photo_watermark)
-├── cli.py                   # 命令行参数解析 (click)
-├── core/                    # 核心功能模块
-│   ├── exif_reader.py       # EXIF信息读取和日期提取
-│   ├── image_processor.py   # 图像处理和水印叠加
-│   └── watermark.py         # 水印配置和渲染逻辑
-├── utils/                   # 工具函数
-│   ├── file_utils.py        # 文件和目录操作
-│   └── validators.py        # 输入验证
-└── exceptions.py            # 自定义异常定义
+src/                         # 源代码目录
+├── main.py                  # 应用程序入口
+├── watermark_app/           # 主应用包
+│   ├── __init__.py
+│   ├── app.py               # 应用程序主类
+│   ├── gui/                 # GUI组件
+│   │   ├── main_window.py   # 主窗口
+│   │   ├── widgets/         # 自定义组件
+│   │   │   ├── file_list.py       # 文件列表组件
+│   │   │   ├── preview_panel.py   # 预览面板
+│   │   │   ├── watermark_panel.py # 水印设置面板
+│   │   │   └── export_dialog.py   # 导出对话框
+│   │   └── dialogs/         # 对话框
+│   ├── core/                # 核心功能模块
+│   │   ├── image_processor.py     # 图像处理
+│   │   ├── watermark.py           # 水印处理
+│   │   ├── file_manager.py        # 文件管理
+│   │   └── exporter.py            # 导出处理
+│   ├── config/              # 配置管理
+│   │   ├── settings.py            # 应用设置
+│   │   ├── templates.py           # 模板管理
+│   │   └── defaults.py            # 默认配置
+│   └── utils/               # 工具函数
+│       ├── validators.py          # 输入验证
+│       ├── helpers.py             # 辅助函数
+│       └── constants.py           # 常量定义
 tests/                       # 测试代码
-└── fixtures/                # 测试用图片文件
+build/                       # 构建脚本和打包输出
+assets/                      # 资源文件（图标、字体等）
 ```
 
 ## 核心功能架构
 
 ### 技术栈
 
-- **图像处理**: Pillow (PIL) - EXIF读取和图像操作
-- **命令行**: Click - 用户友好的CLI接口  
+- **GUI框架**: Tkinter (Python内置，轻量级跨平台)
+- **图像处理**: Pillow (PIL) - 图像操作和水印叠加
+- **打包工具**: PyInstaller - 生成各平台可执行文件
 - **测试**: pytest + pytest-cov
 - **代码质量**: black, flake8, mypy
 
 ### 关键组件
 
-1. **ExifReader**: 提取图片拍摄时间，格式化为YYYY-MM-DD
-2. **WatermarkRenderer**: 处理9种位置布局、字体大小/颜色配置
-3. **ImageProcessor**: 图像加载、水印叠加、批量处理
-4. **CLI**: 支持单文件/目录处理，输出到{原目录}_watermark子目录
+1. **MainWindow**: 主窗口界面，包含文件列表、预览区域、水印设置
+2. **ImageProcessor**: 图像处理核心，水印叠加和格式转换
+3. **WatermarkRenderer**: 文本和图片水印渲染，支持位置、样式设置
+4. **FileManager**: 文件导入、管理和批量导出
+5. **TemplateManager**: 水印模板的保存和加载
+6. **PreviewWidget**: 实时预览组件，显示水印效果
 
 ## 开发工作流
 
@@ -55,26 +73,32 @@ pip install -r requirements-dev.txt
 ### 开发命令
 
 ```bash
-# 运行工具
-python -m photo_watermark /path/to/photos --font-size 24 --color white --position bottom-right
+# 运行应用
+python src/main.py
 
 # 测试
-pytest --cov=photo_watermark
-pytest tests/test_exif_reader.py -v
+pytest --cov=watermark_app
+pytest tests/test_core/ -v
 
 # 代码质量
 black src/ tests/
 flake8 src/ tests/
 mypy src/
+
+# 打包应用
+pyinstaller build/build_windows.py  # Windows
+pyinstaller build/build_macos.py    # macOS
+pyinstaller build/build_linux.py    # Linux
 ```
 
 ## 代码约定
 
 ### 错误处理策略
 
-- 无EXIF信息: 记录警告并跳过文件
-- 不支持格式: 提示并继续处理其他文件  
-- 权限问题: 提供清晰错误信息和解决建议
+- 图像加载失败: 显示友好错误信息，跳过该文件
+- 不支持格式: 提示用户选择支持的格式
+- 导出失败: 提供重试机制和详细错误说明
+- 内存不足: 自动压缩图片或建议用户减少批量数量
 
 ### 水印位置常量
 
@@ -83,39 +107,42 @@ mypy src/
 ### 测试策略
 
 - 使用`tests/fixtures/`存放测试图片
-- 模拟不同EXIF格式和异常情况
-- 集成测试验证端到端工作流
+- GUI组件单元测试和集成测试
+- 跨平台兼容性测试
 
 ## 关键实现细节
 
-### EXIF日期解析
+### GUI架构设计
 
 ```python
-# 优先使用Pillow内置EXIF功能，fallback到exifread
-from PIL.ExifTags import TAGS
-exifdata = image.getexif()
-# 查找DateTimeOriginal或DateTime标签
+# 主窗口布局：左侧文件列表，右侧预览+设置
+class MainWindow(tk.Tk):
+    def __init__(self):
+        # 初始化界面组件
+        self.setup_ui()
+        self.setup_bindings()
 ```
 
-### 批量处理模式
+### 实时预览更新
 
-- 创建`{原目录名}_watermark`子目录
-- 保持原始文件名，显示处理进度
-- 优雅处理内存使用（逐张处理，不并行加载）
+- 监听所有水印参数变化事件
+- 异步更新预览，避免阻塞UI
+- 缓存渲染结果，优化性能
 
-### 命令行设计
+### 批量处理机制
 
-- 位置参数: 输入路径
-- 可选参数: --font-size, --color, --position
-- 进度显示和错误汇总
+- 多线程处理，主线程负责UI响应
+- 进度条实时更新，支持取消操作
+- 错误收集和汇总报告
 
 ## 开发重点
 
-当前处于实现阶段，重点关注:
+当前处于重新开发阶段，重点关注:
 
-1. 确保EXIF解析的鲁棒性（不同相机品牌兼容性）
-2. 水印渲染质量和性能优化
-3. 用户体验（清晰的错误提示、进度显示）
-4. 全面的测试覆盖（边界情况、异常处理）
+1. GUI界面的直观性和易用性设计
+2. 实时预览的性能优化和响应速度
+3. 批量处理的稳定性和错误处理
+4. 跨平台兼容性（Windows、macOS、Linux）
+5. 打包和分发的自动化流程
 
 参考`PRD.md`了解详细功能需求，`WORKPLAN.md`了解开发里程碑。

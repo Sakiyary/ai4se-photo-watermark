@@ -1,208 +1,202 @@
-# AI4SE Photo Watermark
+# 水印工具 (Watermark Tool)
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A Python command-line tool for adding date watermarks to photos using EXIF data. Automatically extracts the date taken from image metadata and overlays it as a customizable watermark.
+一个跨平台的桌面水印工具，提供直观易用的图形界面，支持为图片批量添加文本和图片水印。
 
-## Features
+## 主要特性
 
-- 📸 **EXIF Date Extraction**: Automatically reads shooting date from image metadata
-- 🎨 **Customizable Watermarks**: Control font size, color, position, and opacity
-- 📁 **Batch Processing**: Process single images or entire directories
-- 🔤 **Multiple Fonts**: Support for system fonts and custom font files
-- 🎯 **9 Position Presets**: Place watermarks anywhere on your images
-- 🛡️ **Error Handling**: Graceful handling of missing EXIF data and unsupported formats
-- ⚡ **Performance Optimized**: Efficient processing with minimal memory usage
+- �️ **跨平台支持**: Windows、macOS、Linux 全平台支持
+- 🎨 **图形化界面**: 直观易用的 GUI，无需命令行操作
+- � **批量处理**: 支持单张图片和批量导入处理
+- 🎯 **实时预览**: 所有水印调整实时显示效果
+- � **文本水印**: 自定义文本、字体、颜色、透明度
+- 🖼️ **图片水印**: 支持 Logo 或图片作为水印
+- 📐 **精确定位**: 九宫格预设位置 + 手动拖拽定位
+- � **模板管理**: 保存和复用水印设置模板
+- 🎛️ **灵活导出**: 多种格式支持，防止覆盖原文件
 
-## Installation
+## 安装说明
 
-### From Source
+### 下载可执行文件 (推荐)
 
-1. Clone the repository:
+前往 [GitHub Releases](https://github.com/Sakiyary/ai4se-photo-watermark/releases) 下载对应平台的可执行文件：
+
+- **Windows**: `WatermarkTool-Windows.exe`
+- **macOS**: `WatermarkTool-macOS.dmg`  
+- **Linux**: `WatermarkTool-Linux.AppImage`
+
+### 从源码运行
+
+1. 克隆项目：
 
 ```bash
 git clone https://github.com/Sakiyary/ai4se-photo-watermark.git
 cd ai4se-photo-watermark
 ```
 
-2. Create and activate a virtual environment:
-
-```bash
-python -m venv venv
-
-# Windows
-venv\\Scripts\\activate
-
-# macOS/Linux
-source venv/bin/activate
-```
-
-3. Install dependencies:
+2. 安装依赖：
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### As a Package
+3. 运行应用：
 
 ```bash
-pip install -e .
+python src/main.py
 ```
 
-## Quick Start
+## 快速开始
 
-### Basic Usage
+### 基础操作
 
-Add watermarks to all images in a directory:
+1. **导入图片**
+   - 拖拽图片到主界面
+   - 点击"添加文件"或"添加文件夹"
+   - 支持 JPEG、PNG、BMP、TIFF 格式
+
+2. **设置水印**
+   - 输入水印文本
+   - 调节字体大小和透明度
+   - 选择水印位置（九宫格）
+
+3. **预览效果**
+   - 实时查看水印效果
+   - 点击图片列表切换预览
+
+4. **导出图片**
+   - 选择输出文件夹
+   - 设置文件命名规则
+   - 点击"开始处理"
+
+### 高级功能
+
+- **模板管理**: 保存常用水印设置为模板，一键应用
+- **批量处理**: 一次处理多张图片，显示处理进度
+- **手动定位**: 拖拽水印到精确位置
+- **图片水印**: 使用 Logo 或其他图片作为水印
+
+## 支持格式
+
+### 输入格式
+
+- JPEG (.jpg, .jpeg)
+- PNG (.png) - 支持透明通道
+- BMP (.bmp)
+- TIFF (.tif, .tiff)
+
+### 输出格式
+
+- JPEG - 可调节压缩质量
+- PNG - 保持透明通道
+
+## 界面预览
+
+```
+┌─────────────────┬──────────────────────────────┐
+│   文件列表       │        预览区域               │
+│                │                              │
+│  📁 添加文件夹   │     [图片预览 + 水印效果]      │
+│  📄 添加文件     │                              │
+│                │                              │
+│  🖼️ image1.jpg │                              │
+│  🖼️ image2.png │                              │
+│  🖼️ image3.jpg │                              │
+├─────────────────┼──────────────────────────────┤
+│   水印设置       │        导出设置               │
+│                │                              │
+│  文本: [____]   │  输出文件夹: [____________]   │
+│  大小: [__]     │  命名规则: [____________]     │
+│  颜色: [__]     │  格式: [JPEG▼] 质量: [95]    │
+│  透明度: [--]   │                              │
+│  位置: [九宫格]  │         [开始处理]            │
+└─────────────────┴──────────────────────────────┘
+```
+
+## 开发说明
+
+### 环境准备
 
 ```bash
-python -m photo_watermark /path/to/photos
-```
+# 克隆项目
+git clone https://github.com/Sakiyary/ai4se-photo-watermark.git
+cd ai4se-photo-watermark
 
-Process a single image:
+# 创建虚拟环境
+python -m venv venv
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # macOS/Linux
 
-```bash
-python -m photo_watermark /path/to/photo.jpg
-```
-
-### Custom Styling
-
-```bash
-# Large white text in top-right corner
-python -m photo_watermark /path/to/photos --font-size 48 --color white --position top-right
-
-# Red text with black outline
-python -m photo_watermark /path/to/photos --color red --outline-color black --outline-width 2
-
-# Semi-transparent watermark
-python -m photo_watermark /path/to/photos --opacity 128
-```
-
-## Command Line Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--font-size` | `-s` | 32 | Font size for watermark text |
-| `--color` | `-c` | white | Text color (name, hex, or RGB) |
-| `--position` | `-p` | bottom-right | Watermark position |
-| `--margin` | `-m` | 10 | Margin from edges in pixels |
-| `--opacity` | | 255 | Text opacity (0-255) |
-| `--outline-width` | | 1 | Width of text outline |
-| `--outline-color` | | black | Color of text outline |
-| `--font-path` | | | Path to custom font file |
-| `--output` | `-o` | | Output path (single files only) |
-| `--quality` | `-q` | 95 | JPEG quality (1-100) |
-| `--verbose` | `-v` | | Enable verbose output |
-| `--quiet` | | | Suppress progress output |
-
-### Position Options
-
-- `top-left`, `top-center`, `top-right`
-- `left-center`, `center`, `right-center`  
-- `bottom-left`, `bottom-center`, `bottom-right`
-
-### Color Formats
-
-- **Named colors**: `white`, `black`, `red`, `green`, `blue`, `yellow`, `cyan`, `magenta`, `gray`
-- **Hex colors**: `#FF0000`, `#00FF00`, `#0000FF`
-- **RGB format**: `rgb(255, 0, 0)`, `rgba(255, 0, 0, 128)`
-
-## Examples
-
-### Directory Processing
-
-```bash
-# Process all images in 'vacation_photos' directory
-python -m photo_watermark ./vacation_photos
-
-# Output will be saved to 'vacation_photos_watermark' directory
-```
-
-### Custom Styling Examples
-
-```bash
-# Large golden text in bottom-left with custom margin
-python -m photo_watermark ./photos --font-size 40 --color "#FFD700" --position bottom-left --margin 20
-
-# Centered semi-transparent text
-python -m photo_watermark ./photos --position center --opacity 128
-
-# Custom font with outline
-python -m photo_watermark ./photos --font-path "/path/to/font.ttf" --outline-width 3
-```
-
-### Single File Processing
-
-```bash
-# Process single file with custom output location
-python -m photo_watermark photo.jpg --output watermarked_photo.jpg
-```
-
-## Supported Formats
-
-- **Input**: JPEG (.jpg, .jpeg), TIFF (.tif, .tiff)
-- **Output**: Same as input format with optional quality control for JPEG
-
-## How It Works
-
-1. **EXIF Reading**: Extracts shooting date from image metadata using multiple fallback methods
-2. **Date Formatting**: Converts date to YYYY-MM-DD format  
-3. **Watermark Rendering**: Creates text overlay with specified styling
-4. **Position Calculation**: Places watermark according to position and margin settings
-5. **Image Processing**: Applies watermark and saves to output location
-
-## Error Handling
-
-- **No EXIF Date**: Images without date metadata are skipped with a warning
-- **Unsupported Formats**: Non-JPEG/TIFF files are ignored
-- **Missing Files**: Clear error messages for file not found issues
-- **Permission Errors**: Helpful suggestions for access problems
-
-## Project Structure
-
-```
-src/photo_watermark/
-├── __init__.py              # Package initialization
-├── __main__.py              # CLI entry point
-├── cli.py                   # Command line interface
-├── core/                    # Core functionality
-│   ├── exif_reader.py       # EXIF data extraction
-│   ├── image_processor.py   # Image processing pipeline
-│   └── watermark.py         # Watermark rendering engine
-├── utils/                   # Utility functions
-│   ├── file_utils.py        # File operations
-│   └── validators.py        # Input validation
-└── exceptions.py            # Custom exceptions
-```
-
-## Development
-
-### Setting Up Development Environment
-
-```bash
-# Install development dependencies
+# 安装开发依赖
 pip install -r requirements-dev.txt
+```
 
-# Run code formatting
+### 运行测试
+
+```bash
+# 运行所有测试
+pytest --cov=watermark_app
+
+# 运行特定测试
+pytest tests/test_core/ -v
+```
+
+### 代码质量
+
+```bash
+# 代码格式化
 black src/ tests/
 
-# Run linting
+# 代码检查
 flake8 src/ tests/
 
-# Run type checking
+# 类型检查
 mypy src/
 ```
 
-### Running Tests
+## 项目结构
 
-```bash
-# Run all tests with coverage
-pytest --cov=photo_watermark
-
-# Run specific test file
-pytest tests/test_exif_reader.py -v
 ```
+TODO
+```
+
+## 贡献指南
+
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/新功能`)
+3. 提交更改 (`git commit -m '添加新功能'`)
+4. 推送到分支 (`git push origin feature/新功能`)
+5. 创建 Pull Request
+
+## 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+
+## 技术支持
+
+- **问题反馈**: [GitHub Issues](https://github.com/Sakiyary/ai4se-photo-watermark/issues)
+- **功能建议**: [GitHub Discussions](https://github.com/Sakiyary/ai4se-photo-watermark/discussions)
+- **项目文档**: [Wiki](https://github.com/Sakiyary/ai4se-photo-watermark/wiki)
+
+## 更新日志
+
+### v2.0.0 (开发中)
+
+- 🎉 全新 GUI 界面
+- ✨ 实时预览功能
+- 🔄 批量处理优化
+- 📱 跨平台支持
+
+### v1.0.0 (已弃用)
+
+- 基础命令行工具
+- EXIF 时间水印功能
+
+---
+
+更多信息请访问 [GitHub 仓库](https://github.com/Sakiyary/ai4se-photo-watermark)。
 
 ## Contributing
 

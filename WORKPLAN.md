@@ -1,239 +1,363 @@
-# 工作计划 - AI4SE Photo Watermark
+# 水印工具开发工作计划
 
-## 项目架构设计
+## 1. 项目概述
 
-### 模块结构
+本项目旨在开发一个跨平台的桌面水印工具，支持 Windows、macOS 和 Linux 系统。项目采用 Python + GUI 框架的技术栈，提供直观易用的图形界面，支持批量图片水印处理。
 
-```
-src/
-├── photo_watermark/
-│   ├── __init__.py
-│   ├── __main__.py          # CLI入口点
-│   ├── cli.py               # 命令行参数解析
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── exif_reader.py   # EXIF信息读取
-│   │   ├── image_processor.py # 图像处理和水印添加
-│   │   └── watermark.py     # 水印配置和渲染
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   ├── file_utils.py    # 文件和目录操作
-│   │   └── validators.py    # 输入验证
-│   └── exceptions.py        # 自定义异常
-tests/
-├── __init__.py
-├── test_exif_reader.py
-├── test_image_processor.py
-├── test_watermark.py
-├── test_cli.py
-└── fixtures/                # 测试用图片文件
-```
+## 2. 技术栈确认
 
-### 核心组件设计
+### 2.1 核心技术选择
 
-#### 1. EXIF Reader (exif_reader.py)
+经过评估，确定以下技术栈：
 
-- **职责**：读取图片EXIF信息，提取拍摄时间
-- **主要方法**：
-  - `extract_date_taken(image_path)` → datetime对象
-  - `format_date(datetime_obj)` → 字符串（YYYY-MM-DD）
+- **开发语言**: Python 3.8+
+- **GUI 框架**: Tkinter (优先选择，Python 内置，简单轻量)
+- **图像处理**: Pillow (PIL)
+- **打包工具**: PyInstaller
+- **测试框架**: pytest
+- **代码质量**: black, flake8
 
-#### 2. Watermark Engine (watermark.py)
+### 2.2 技术选择理由
 
-- **职责**：水印样式配置和文本渲染
-- **主要类**：
-  - `WatermarkConfig`：水印配置类（位置、颜色、字体大小等）
-  - `WatermarkRenderer`：水印渲染器
+**选择 Tkinter 的原因：**
 
-#### 3. Image Processor (image_processor.py)
+- Python 内置，无需额外依赖
+- 跨平台兼容性好
+- 学习成本低，开发周期短
+- 打包后体积较小
+- 对于本项目的功能需求完全够用
 
-- **职责**：图像加载、水印叠加、保存
-- **主要方法**：
-  - `load_image(path)` → PIL Image对象
-  - `add_watermark(image, text, config)` → PIL Image对象
-  - `save_image(image, output_path)`
+**备选方案 PyQt6：**
 
-#### 4. CLI Interface (cli.py)
+- 功能更强大，界面更美观
+- 但依赖较重，打包体积大
+- 学习成本高，开发周期长
+- 适用于更复杂的应用
 
-- **职责**：命令行参数解析和用户交互
-- **主要功能**：参数验证、帮助信息、进度显示
+## 3. 项目里程碑
 
-## 开发计划
+### 3.1 阶段一：项目基础设施 (第 1 周)
 
-### 第一阶段：核心功能开发 (3-4天)
+**目标**: 完成项目初始化和基础架构
 
-#### Day 1: 项目初始化和EXIF读取
+**任务清单**:
 
-- [x] 创建项目目录结构
-- [ ] 设置虚拟环境和依赖管理
-- [ ] 实现EXIF读取功能
-- [ ] 编写EXIF读取的单元测试
+- [ ] 清理旧代码结构
+- [ ] 创建新的项目目录结构
+- [ ] 配置开发环境和依赖
+- [ ] 搭建基础的 GUI 框架
+- [ ] 设置代码规范和质量工具
+- [ ] 初始化测试框架
 
-**具体任务**：
+**交付物**:
 
-1. 创建 `src/photo_watermark/core/exif_reader.py`
-2. 实现 `ExifReader` 类
-3. 处理无EXIF信息的情况
-4. 支持多种日期格式解析
+- 完整的项目目录结构
+- 基础的主窗口界面
+- 开发环境配置文件
+- 初始版本的 README.md
 
-#### Day 2: 水印引擎开发
+**验收标准**:
 
-- [ ] 实现水印配置类
-- [ ] 实现水印渲染器
-- [ ] 支持多种位置计算
-- [ ] 编写水印功能测试
+- 能够运行基础 GUI 应用
+- 所有依赖正确安装
+- 代码质量检查通过
 
-**具体任务**：
+### 3.2 阶段二：核心功能开发 (第 2-3 周)
 
-1. 创建 `WatermarkConfig` 数据类
-2. 实现位置计算算法（9个预设位置）
-3. 实现文本渲染和字体处理
-4. 添加颜色格式支持
+**目标**: 实现 MVP 版本的核心功能
 
-#### Day 3: 图像处理功能
+#### 3.2.1 文件管理模块 (第 2 周前半)
 
-- [ ] 实现图像加载和保存
-- [ ] 集成水印叠加功能
-- [ ] 处理不同图片格式
-- [ ] 优化内存使用
+- [ ] 图片导入功能（单张、批量、文件夹）
+- [ ] 拖拽支持
+- [ ] 图片列表显示
+- [ ] 缩略图生成
+- [ ] 文件格式验证
 
-#### Day 4: CLI接口开发
+#### 3.2.2 图像预览模块 (第 2 周后半)
 
-- [ ] 实现命令行参数解析
-- [ ] 添加参数验证
-- [ ] 实现批量处理逻辑
-- [ ] 添加进度显示
+- [ ] 图片预览组件
+- [ ] 预览缩放功能
+- [ ] 图片切换功能
+- [ ] 预览区域布局
 
-### 第二阶段：测试和优化 (2天)
+#### 3.2.3 水印处理模块 (第 3 周前半)
 
-#### Day 5: 单元测试和集成测试
+- [ ] 文本水印生成
+- [ ] 九宫格位置预设
+- [ ] 基础样式设置（大小、颜色、透明度）
+- [ ] 实时预览更新
 
-- [ ] 完善单元测试覆盖率
-- [ ] 创建测试图片fixtures
-- [ ] 端到端测试
+#### 3.2.4 导出功能模块 (第 3 周后半)
+
+- [ ] 导出设置界面
+- [ ] 批量导出处理
+- [ ] 进度显示
+- [ ] 文件命名规则
+
+**交付物**:
+
+- 可运行的 MVP 版本
+- 基础功能演示视频
+- 单元测试覆盖核心功能
+
+**验收标准**:
+
+- 能够导入和预览图片
+- 能够添加文本水印
+- 能够导出处理后的图片
+- 基础功能稳定运行
+
+### 3.3 阶段三：功能完善 (第 4 周)
+
+**目标**: 完善用户体验和高级功能
+
+#### 3.3.1 用户界面优化
+
+- [ ] 界面布局优化
+- [ ] 交互体验改善
+- [ ] 错误提示和用户引导
+- [ ] 键盘快捷键支持
+
+#### 3.3.2 配置管理
+
+- [ ] 水印模板保存 / 加载
+- [ ] 应用设置管理
+- [ ] 配置文件处理
+- [ ] 默认值设置
+
+#### 3.3.3 高级功能（时间允许）
+
+- [ ] 手动拖拽定位
+- [ ] 图片水印支持
+- [ ] 旋转功能
+- [ ] 多语言支持
+
+**交付物**:
+
+- 功能完整的应用程序
+- 用户使用手册
+- 完整的测试套件
+
+### 3.4 阶段四：测试与发布 (第 5 周)
+
+**目标**: 全面测试和多平台发布
+
+#### 3.4.1 测试阶段
+
+- [ ] 单元测试完善
+- [ ] 集成测试
+- [ ] 用户接受测试
 - [ ] 性能测试
+- [ ] 兼容性测试（多操作系统）
 
-#### Day 6: 用户体验优化
+#### 3.4.2 打包发布
 
-- [ ] 错误处理和用户友好提示
-- [ ] 帮助文档完善
-- [ ] 命令行体验优化
-- [ ] 代码重构和优化
+- [ ] Windows .exe 打包
+- [ ] macOS .app/.dmg 打包
+- [ ] Linux AppImage/deb 打包
+- [ ] 安装程序制作
+- [ ] GitHub Release 发布
 
-### 第三阶段：打包和文档 (1天)
+**交付物**:
 
-#### Day 7: 项目完善
+- 各平台可执行文件
+- 安装说明文档
+- 发布说明和更新日志
+- 用户反馈收集机制
 
-- [ ] 创建 `setup.py` 和 `pyproject.toml`
-- [ ] 更新 `README.md` 使用文档
-- [ ] 创建使用示例
-- [ ] 准备发布版本
+## 4. 项目目录结构
 
-## 技术实现要点
-
-### 1. EXIF处理策略
-
-```python
-# 使用 Pillow 的内置 EXIF 功能
-from PIL import Image
-from PIL.ExifTags import TAGS
-
-def extract_exif_date(image_path):
-    try:
-        image = Image.open(image_path)
-        exifdata = image.getexif()
-        for tag_id in exifdata:
-            tag = TAGS.get(tag_id, tag_id)
-            if tag == "DateTime":
-                return exifdata[tag_id]
-    except Exception as e:
-        # 处理异常情况
-        return None
+```
+ai4se-photo-watermark/
+├── README.md                    # 项目介绍和使用说明
+├── PRD.md                      # 产品需求文档
+├── WORKPLAN.md                 # 开发计划
+├── requirements.txt            # 项目依赖
+├── setup.py                    # 包安装配置
+├── .gitignore                  # Git 忽略文件
+├── 
+├── src/                        # 源代码目录
+│   ├── main.py                 # 应用程序入口
+│   ├── watermark_app/          # 主应用包
+│   │   ├── __init__.py
+│   │   ├── app.py              # 应用程序主类
+│   │   ├── gui/                # GUI 组件
+│   │   │   ├── __init__.py
+│   │   │   ├── main_window.py  # 主窗口
+│   │   │   ├── widgets/        # 自定义组件
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── file_list.py      # 文件列表组件
+│   │   │   │   ├── preview_panel.py  # 预览面板
+│   │   │   │   ├── watermark_panel.py # 水印设置面板
+│   │   │   │   └── export_dialog.py  # 导出对话框
+│   │   │   └── dialogs/        # 对话框
+│   │   │       ├── __init__.py
+│   │   │       ├── settings.py       # 设置对话框
+│   │   │       └── about.py          # 关于对话框
+│   │   ├── core/               # 核心功能模块
+│   │   │   ├── __init__.py
+│   │   │   ├── image_processor.py    # 图像处理
+│   │   │   ├── watermark.py          # 水印处理
+│   │   │   ├── file_manager.py       # 文件管理
+│   │   │   └── exporter.py           # 导出处理
+│   │   ├── config/             # 配置管理
+│   │   │   ├── __init__.py
+│   │   │   ├── settings.py           # 应用设置
+│   │   │   ├── templates.py          # 模板管理
+│   │   │   └── defaults.py           # 默认配置
+│   │   └── utils/              # 工具函数
+│   │       ├── __init__.py
+│   │       ├── validators.py         # 输入验证
+│   │       ├── helpers.py            # 辅助函数
+│   │       └── constants.py          # 常量定义
+│   │
+├── tests/                      # 测试代码
+│   ├── __init__.py
+│   ├── test_core/              # 核心功能测试
+│   │   ├── __init__.py
+│   │   ├── test_image_processor.py
+│   │   ├── test_watermark.py
+│   │   └── test_file_manager.py
+│   ├── test_gui/               # GUI 测试
+│   │   ├── __init__.py
+│   │   └── test_widgets.py
+│   ├── test_config/            # 配置测试
+│   │   ├── __init__.py
+│   │   └── test_settings.py
+│   └── fixtures/               # 测试数据
+│       ├── images/             # 测试图片
+│       └── configs/            # 测试配置
+│
+├── docs/                       # 文档目录
+│   ├── user_manual.md          # 用户手册
+│   ├── developer_guide.md      # 开发指南
+│   └── api_reference.md        # API 参考
+│
+├── build/                      # 构建输出目录
+│   ├── scripts/                # 构建脚本
+│   │   ├── build_windows.py
+│   │   ├── build_macos.py
+│   │   └── build_linux.py
+│   └── dist/                   # 打包输出
+│
+└── assets/                     # 资源文件
+    ├── icons/                  # 图标
+    ├── images/                 # 示例图片
+    └── fonts/                  # 字体文件（如需要）
 ```
 
-### 2. 水印位置计算
+## 5. 开发规范
 
-```python
-def calculate_position(image_size, text_size, position):
-    img_w, img_h = image_size
-    text_w, text_h = text_size
-    
-    positions = {
-        'top-left': (10, 10),
-        'top-center': (img_w//2 - text_w//2, 10),
-        'top-right': (img_w - text_w - 10, 10),
-        'center': (img_w//2 - text_w//2, img_h//2 - text_h//2),
-        'bottom-right': (img_w - text_w - 10, img_h - text_h - 10),
-        # ... 其他位置
-    }
-    return positions.get(position, positions['bottom-right'])
-```
+### 5.1 代码规范
 
-### 3. 批量处理流程
+- **命名规范**: 遵循 PEP 8 命名约定
+- **格式化**: 使用 black 自动格式化
+- **类型注解**: 使用 Python 类型提示
+- **文档字符串**: 所有公共函数 / 类提供 docstring
 
-```python
-def process_directory(input_dir, config):
-    output_dir = Path(input_dir).parent / f"{Path(input_dir).name}_watermark"
-    output_dir.mkdir(exist_ok=True)
-    
-    image_files = find_image_files(input_dir)
-    
-    for i, image_path in enumerate(image_files):
-        try:
-            process_single_image(image_path, output_dir, config)
-            print(f"[{i+1}/{len(image_files)}] ✓ {image_path.name}")
-        except Exception as e:
-            print(f"[{i+1}/{len(image_files)}] ✗ {image_path.name}: {e}")
-```
+### 5.2 提交规范
 
-## 质量保证
+- **提交格式**: 使用约定式提交格式
+  - `feat: 新功能`
+  - `fix: 错误修复`
+  - `docs: 文档更新`
+  - `style: 代码格式`
+  - `refactor: 重构`
+  - `test: 测试相关`
 
-### 测试策略
+### 5.3 测试规范
 
-1. **单元测试**：每个模块独立测试，覆盖率 > 80%
-2. **集成测试**：测试模块间协作
-3. **功能测试**：端到端用户场景测试
-4. **性能测试**：大图片和批量处理测试
+- **测试覆盖率**: 目标 > 80%
+- **测试类型**: 单元测试 + 集成测试
+- **测试数据**: 使用 fixtures 目录存放测试数据
 
-### 代码质量
+## 6. 风险管理
 
-- 使用 `black` 进行代码格式化
-- 使用 `flake8` 进行代码检查
-- 使用 `mypy` 进行类型检查
-- 遵循 PEP 8 编码规范
+### 6.1 技术风险
 
-### 错误处理
+| 风险 | 影响程度 | 可能性 | 缓解策略 |
+|------|----------|---------|----------|
+| Tkinter 功能限制 | 中 | 低 | 预研验证，必要时切换到 PyQt6 |
+| 跨平台兼容性问题 | 高 | 中 | 早期多平台测试，CI/CD 覆盖 |
+| 大图片内存问题 | 中 | 中 | 实现图片压缩和分块处理 |
+| 打包体积过大 | 低 | 中 | 优化依赖，使用轻量级组件 |
 
-- 文件不存在：清晰的错误提示
-- 无EXIF信息：警告并跳过
-- 权限问题：建议解决方案
-- 内存不足：优化处理策略
+### 6.2 时间风险
 
-## 风险管控
+| 风险 | 影响程度 | 可能性 | 缓解策略 |
+|------|----------|---------|----------|
+| 功能开发超时 | 高 | 中 | 优先级管理，MVP 优先 |
+| 测试时间不足 | 中 | 中 | 并行开发和测试 |
+| 打包发布延迟 | 低 | 低 | 提前准备打包脚本 |
 
-### 技术风险
+## 7. 质量保证
 
-1. **EXIF格式兼容性**：测试多种相机品牌的图片
-2. **字体渲染问题**：提供系统字体fallback机制
-3. **大文件处理**：实现内存优化策略
+### 7.1 代码质量
 
-### 缓解措施
+- **自动化检查**: pre-commit hooks
+- **代码审查**: 所有功能完成后自我审查
+- **静态分析**: 使用 flake8, mypy 检查
 
-1. 建立全面的测试图片库
-2. 实现渐进式错误处理
-3. 提供详细的用户文档和FAQ
+### 7.2 测试质量
 
-## 里程碑
+- **测试驱动**: 核心功能先写测试
+- **边界测试**: 测试异常情况和边界条件
+- **性能测试**: 大批量图片处理测试
 
-- **M1** (Day 2): EXIF读取功能完成
-- **M2** (Day 4): 核心水印功能完成
-- **M3** (Day 6): CLI界面和批量处理完成
-- **M4** (Day 7): 测试和文档完成，项目ready
+### 7.3 用户体验
 
-## 成功标准
+- **可用性测试**: 邀请用户试用反馈
+- **错误处理**: 友好的错误提示
+- **性能优化**: 响应时间 < 100ms
 
-1. 能够正确处理主流相机拍摄的JPEG图片
-2. 支持自定义水印样式和位置
-3. 批量处理性能满足需求（<5秒/张）
-4. 用户界面友好，错误提示清晰
-5. 代码质量高，测试覆盖率达标
+## 8. 发布计划
+
+### 8.1 版本规划
+
+- **v1.0.0-alpha**: MVP 版本，核心功能可用
+- **v1.0.0-beta**: 功能完善，开始公开测试
+- **v1.0.0**: 正式发布版本
+
+### 8.2 发布渠道
+
+- **GitHub Release**: 主要发布渠道
+- **官方网站**: 项目介绍和下载链接
+- **社交媒体**: 宣传推广
+
+## 9. 后续维护
+
+### 9.1 用户反馈
+
+- **Issue 跟踪**: GitHub Issues
+- **功能建议**: GitHub Discussions
+- **Bug 报告**: 提供详细的报告模板
+
+### 9.2 版本迭代
+
+- **定期更新**: 每月发布补丁版本
+- **功能更新**: 每季度发布次要版本
+- **重大更新**: 每年发布主要版本
+
+## 10. 成功指标
+
+### 10.1 技术指标
+
+- [ ] 代码覆盖率 > 80%
+- [ ] 所有平台打包成功
+- [ ] 性能基准达标
+- [ ] 零严重 Bug
+
+### 10.2 功能指标
+
+- [ ] 支持所有计划的图片格式
+- [ ] 实时预览响应 < 100ms
+- [ ] 批量处理 1000 + 图片无崩溃
+- [ ] 用户界面直观易用
+
+### 10.3 发布指标
+
+- [ ] 三大平台都有可执行文件
+- [ ] 安装包大小 < 100MB
+- [ ] 首次使用无需配置
+- [ ] 用户手册完整清晰
