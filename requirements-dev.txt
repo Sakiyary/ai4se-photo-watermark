@@ -1,7 +1,0 @@
-pytest>=7.0.0
-pytest-cov>=4.0.0
-black>=22.0.0
-flake8>=5.0.0
-mypy>=0.991
-pyinstaller>=5.0.0
-cx-freeze>=6.0.0

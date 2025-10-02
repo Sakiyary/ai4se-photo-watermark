@@ -1,17 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-水印工具 - 跨平台桌面水印应用
-
-一个基于Python + Tkinter的跨平台水印工具，支持：
-- 文本和图片水印
-- 批量处理
-- 实时预览
-- 模板管理
-
-Version: 2.0.0-alpha
-Author: Sakiyary
+水印应用程序包
 """
 
-__version__ = "2.0.0-alpha"
-__author__ = "Sakiyary"
-__email__ = "sakiyary19@qq.com"
-__description__ = "跨平台桌面水印工具"
+__version__ = "1.0.0"
+__author__ = "AI Assistant"
+__description__ = "图片水印处理桌面应用程序"
