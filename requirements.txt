@@ -5,6 +5,7 @@ Pillow>=10.0.0
 
 # GUI框架
 tkinter-tooltip>=2.1.0
+tkinterdnd2>=0.3.0
 
 # 配置文件处理
 configparser>=5.3.0

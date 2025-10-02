@@ -11,7 +11,7 @@ from .position_control_panel import PositionControlPanel
 
 __all__ = [
     'ImageListPanel',
-    'PreviewPanel', 
+    'PreviewPanel',
     'WatermarkControlPanel',
     'PositionControlPanel'
 ]
