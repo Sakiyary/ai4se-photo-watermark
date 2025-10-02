@@ -192,21 +192,38 @@
 ```
 src/
 ├── main.py                 # 应用程序入口
-├── gui/                    # 图形界面模块
-│   ├── main_window.py      # 主窗口
-│   ├── preview_widget.py   # 预览组件
-│   ├── file_list_widget.py # 文件列表组件
-│   └── settings_dialog.py  # 设置对话框
-├── core/                   # 核心功能模块
-│   ├── image_processor.py  # 图像处理
-│   ├── watermark.py        # 水印处理
-│   └── file_manager.py     # 文件管理
-├── config/                 # 配置管理
-│   ├── settings.py         # 应用设置
-│   └── templates.py        # 模板管理
-└── utils/                  # 工具函数
-    ├── validators.py       # 输入验证
-    └── helpers.py          # 辅助函数
+├── watermark_app/          # 主应用包
+│   ├── __init__.py
+│   ├── app.py              # 应用程序主类
+│   ├── gui/                # GUI组件
+│   │   ├── __init__.py
+│   │   ├── main_window.py  # 主窗口
+│   │   ├── widgets/        # 自定义组件
+│   │   │   ├── __init__.py
+│   │   │   ├── file_list.py      # 文件列表组件
+│   │   │   ├── preview_panel.py  # 预览面板
+│   │   │   ├── watermark_panel.py # 水印设置面板
+│   │   │   └── export_dialog.py  # 导出对话框
+│   │   └── dialogs/        # 对话框
+│   │       ├── __init__.py
+│   │       ├── settings.py       # 设置对话框
+│   │       └── about.py          # 关于对话框
+│   ├── core/               # 核心功能模块
+│   │   ├── __init__.py
+│   │   ├── image_processor.py    # 图像处理
+│   │   ├── watermark.py          # 水印处理
+│   │   ├── file_manager.py       # 文件管理
+│   │   └── exporter.py           # 导出处理
+│   ├── config/             # 配置管理
+│   │   ├── __init__.py
+│   │   ├── settings.py           # 应用设置
+│   │   ├── templates.py          # 模板管理
+│   │   └── defaults.py           # 默认配置
+│   └── utils/              # 工具函数
+│       ├── __init__.py
+│       ├── validators.py         # 输入验证
+│       ├── helpers.py            # 辅助函数
+│       └── constants.py          # 常量定义
 ```
 
 ### 4.3 部署要求
