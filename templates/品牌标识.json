@@ -1,0 +1,10 @@
+{
+  "text": "Your Brand",
+  "font_size": 32,
+  "color": "#0066CC",
+  "opacity": 200,
+  "position": "top-right",
+  "rotation": 0,
+  "shadow": true,
+  "outline": false
+}

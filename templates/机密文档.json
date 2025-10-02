@@ -1,0 +1,11 @@
+{
+  "text": "机密文档",
+  "font_size": 48,
+  "color": "#FF0000",
+  "opacity": 100,
+  "position": "center",
+  "rotation": -45,
+  "shadow": false,
+  "outline": true,
+  "outline_color": "#000000"
+}

@@ -41,6 +41,10 @@ class PreviewPanel:
     toolbar_frame = ttk.Frame(title_frame)
     toolbar_frame.pack(side=tk.RIGHT)
 
+    # 缩放级别显示
+    self.zoom_label = ttk.Label(toolbar_frame, text="100%", width=6)
+    self.zoom_label.pack(side=tk.LEFT, padx=2)
+
     # 缩放按钮
     self.zoom_in_btn = ttk.Button(
         toolbar_frame, text="放大", command=self._zoom_in, width=6)
@@ -53,6 +57,11 @@ class PreviewPanel:
     self.fit_btn = ttk.Button(toolbar_frame, text="适应",
                               command=self._fit_to_window, width=6)
     self.fit_btn.pack(side=tk.LEFT, padx=2)
+
+    # 原始大小按钮
+    self.actual_size_btn = ttk.Button(
+        toolbar_frame, text="原始", command=self._actual_size, width=6)
+    self.actual_size_btn.pack(side=tk.LEFT, padx=2)
 
     # 创建预览区域框架
     preview_frame = ttk.Frame(self.parent, relief='sunken', borderwidth=2)
@@ -166,6 +175,9 @@ class PreviewPanel:
 
       # 更新滚动区域
       self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+      # 更新缩放标签
+      self._update_zoom_label()
 
     except Exception as e:
       print(f"更新预览失败: {e}")
@@ -297,11 +309,26 @@ class PreviewPanel:
       img_width = self.original_image.width
       img_height = self.original_image.height
 
+      # 计算缩放比例，允许放大小图片以适应窗口
       zoom_x = canvas_width / img_width
       zoom_y = canvas_height / img_height
 
-      self.zoom_level = min(zoom_x, zoom_y, 1.0)  # 不超过原始大小
+      # 选择较小的缩放比例以确保图片完全显示在窗口内
+      self.zoom_level = min(zoom_x, zoom_y)
+      # 限制最大缩放比例为5倍
+      self.zoom_level = min(self.zoom_level, self.max_zoom)
+
       self._update_preview()
+
+  def _actual_size(self):
+    """显示原始大小"""
+    self.zoom_level = 1.0
+    self._update_preview()
+
+  def _update_zoom_label(self):
+    """更新缩放标签"""
+    zoom_percent = int(self.zoom_level * 100)
+    self.zoom_label.config(text=f"{zoom_percent}%")
 
   def _on_canvas_configure(self, event):
     """画布配置变更事件"""
