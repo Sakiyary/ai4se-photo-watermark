@@ -1,0 +1,79 @@
+{
+  "app": {
+    "version": "1.0.0",
+    "window_size": [
+      1200,
+      800
+    ],
+    "window_position": [
+      100,
+      100
+    ],
+    "last_input_directory": "",
+    "last_output_directory": "",
+    "language": "zh_CN"
+  },
+  "watermark": {
+    "text": {
+      "content": "水印文本",
+      "font_family": "",
+      "font_size": 36,
+      "color": [
+        255,
+        255,
+        255,
+        128
+      ],
+      "bold": false,
+      "italic": false,
+      "shadow": false,
+      "shadow_offset": [
+        2,
+        2
+      ],
+      "shadow_color": [
+        0,
+        0,
+        0,
+        64
+      ],
+      "stroke_width": 0,
+      "stroke_color": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    "image": {
+      "path": "",
+      "opacity": 1.0,
+      "size": [
+        100,
+        100
+      ],
+      "keep_aspect_ratio": true
+    },
+    "position": {
+      "preset": "bottom_right",
+      "custom_x": 0,
+      "custom_y": 0,
+      "margin": 20,
+      "rotation": 0.0
+    },
+    "output": {
+      "format": "png",
+      "quality": 85,
+      "resize_enabled": false,
+      "resize_width": 0,
+      "resize_height": 0,
+      "resize_percentage": 100,
+      "naming_rule": "suffix",
+      "naming_prefix": "wm_",
+      "naming_suffix": "_watermarked"
+    }
+  },
+  "test": {
+    "key": "value"
+  }
+}
