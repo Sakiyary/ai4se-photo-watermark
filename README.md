@@ -1,243 +1,297 @@
-# AI4SE Photo Watermark
-
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-
-A Python command-line tool for adding date watermarks to photos using EXIF data. Automatically extracts the date taken from image metadata and overlays it as a customizable watermark.
-
-## Features
-
-- 📸 **EXIF Date Extraction**: Automatically reads shooting date from image metadata
-- 🎨 **Customizable Watermarks**: Control font size, color, position, and opacity
-- 📁 **Batch Processing**: Process single images or entire directories
-- 🔤 **Multiple Fonts**: Support for system fonts and custom font files
-- 🎯 **9 Position Presets**: Place watermarks anywhere on your images
-- 🛡️ **Error Handling**: Graceful handling of missing EXIF data and unsupported formats
-- ⚡ **Performance Optimized**: Efficient processing with minimal memory usage
-
-## Installation
-
-### From Source
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/Sakiyary/ai4se-photo-watermark.git
-cd ai4se-photo-watermark
-```
-
-2. Create and activate a virtual environment:
-
-```bash
-python -m venv venv
-
-# Windows
-venv\\Scripts\\activate
-
-# macOS/Linux
-source venv/bin/activate
-```
-
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-### As a Package
-
-```bash
-pip install -e .
-```
-
-## Quick Start
-
-### Basic Usage
-
-Add watermarks to all images in a directory:
-
-```bash
-python -m photo_watermark /path/to/photos
-```
-
-Process a single image:
-
-```bash
-python -m photo_watermark /path/to/photo.jpg
-```
-
-### Custom Styling
-
-```bash
-# Large white text in top-right corner
-python -m photo_watermark /path/to/photos --font-size 48 --color white --position top-right
-
-# Red text with black outline
-python -m photo_watermark /path/to/photos --color red --outline-color black --outline-width 2
-
-# Semi-transparent watermark
-python -m photo_watermark /path/to/photos --opacity 128
-```
-
-## Command Line Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--font-size` | `-s` | 32 | Font size for watermark text |
-| `--color` | `-c` | white | Text color (name, hex, or RGB) |
-| `--position` | `-p` | bottom-right | Watermark position |
-| `--margin` | `-m` | 10 | Margin from edges in pixels |
-| `--opacity` | | 255 | Text opacity (0-255) |
-| `--outline-width` | | 1 | Width of text outline |
-| `--outline-color` | | black | Color of text outline |
-| `--font-path` | | | Path to custom font file |
-| `--output` | `-o` | | Output path (single files only) |
-| `--quality` | `-q` | 95 | JPEG quality (1-100) |
-| `--verbose` | `-v` | | Enable verbose output |
-| `--quiet` | | | Suppress progress output |
-
-### Position Options
-
-- `top-left`, `top-center`, `top-right`
-- `left-center`, `center`, `right-center`  
-- `bottom-left`, `bottom-center`, `bottom-right`
-
-### Color Formats
-
-- **Named colors**: `white`, `black`, `red`, `green`, `blue`, `yellow`, `cyan`, `magenta`, `gray`
-- **Hex colors**: `#FF0000`, `#00FF00`, `#0000FF`
-- **RGB format**: `rgb(255, 0, 0)`, `rgba(255, 0, 0, 128)`
-
-## Examples
-
-### Directory Processing
-
-```bash
-# Process all images in 'vacation_photos' directory
-python -m photo_watermark ./vacation_photos
-
-# Output will be saved to 'vacation_photos_watermark' directory
-```
-
-### Custom Styling Examples
-
-```bash
-# Large golden text in bottom-left with custom margin
-python -m photo_watermark ./photos --font-size 40 --color "#FFD700" --position bottom-left --margin 20
-
-# Centered semi-transparent text
-python -m photo_watermark ./photos --position center --opacity 128
-
-# Custom font with outline
-python -m photo_watermark ./photos --font-path "/path/to/font.ttf" --outline-width 3
-```
-
-### Single File Processing
-
-```bash
-# Process single file with custom output location
-python -m photo_watermark photo.jpg --output watermarked_photo.jpg
-```
-
-## Supported Formats
-
-- **Input**: JPEG (.jpg, .jpeg), TIFF (.tif, .tiff)
-- **Output**: Same as input format with optional quality control for JPEG
-
-## How It Works
-
-1. **EXIF Reading**: Extracts shooting date from image metadata using multiple fallback methods
-2. **Date Formatting**: Converts date to YYYY-MM-DD format  
-3. **Watermark Rendering**: Creates text overlay with specified styling
-4. **Position Calculation**: Places watermark according to position and margin settings
-5. **Image Processing**: Applies watermark and saves to output location
-
-## Error Handling
-
-- **No EXIF Date**: Images without date metadata are skipped with a warning
-- **Unsupported Formats**: Non-JPEG/TIFF files are ignored
-- **Missing Files**: Clear error messages for file not found issues
-- **Permission Errors**: Helpful suggestions for access problems
-
-## Project Structure
-
-```
-src/photo_watermark/
-├── __init__.py              # Package initialization
-├── __main__.py              # CLI entry point
-├── cli.py                   # Command line interface
-├── core/                    # Core functionality
-│   ├── exif_reader.py       # EXIF data extraction
-│   ├── image_processor.py   # Image processing pipeline
-│   └── watermark.py         # Watermark rendering engine
-├── utils/                   # Utility functions
-│   ├── file_utils.py        # File operations
-│   └── validators.py        # Input validation
-└── exceptions.py            # Custom exceptions
-```
-
-## Development
-
-### Setting Up Development Environment
-
-```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Run code formatting
-black src/ tests/
-
-# Run linting
-flake8 src/ tests/
-
-# Run type checking
-mypy src/
-```
-
-### Running Tests
-
-```bash
-# Run all tests with coverage
-pytest --cov=photo_watermark
-
-# Run specific test file
-pytest tests/test_exif_reader.py -v
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Built with [Pillow](https://pillow.readthedocs.io/) for image processing
-- Uses [ExifRead](https://github.com/ianare/exif-py) for EXIF data extraction
-- CLI powered by [Click](https://click.palletsprojects.com/)
-
-## Troubleshooting
-
-### Common Issues
-
-**Q: "No EXIF date found" for all images**
-A: Some cameras don't store date information in EXIF. Try using images from a different camera or smartphone.
-
-**Q: Watermark appears too small/large**
-A: Adjust the `--font-size` parameter. For high-resolution images, try larger values (64, 96, 128).
-
-**Q: Custom font not working**
-A: Ensure the font file path is correct and the font format is supported (.ttf, .otf).
-
-**Q: Permission denied errors**
-A: Make sure you have write permissions for the output directory.
+# 图片水印处理桌面应用
+
+![Python](https://img.shields.io/badge/Python-3.11.4-blue)
+![Progress](https://img.shields.io/badge/进度-98%25-green)
+![Status](https://img.shields.io/badge/状态-打包发布-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+> **📊 项目状态**: 核心功能已全部完成，正在打包发布  
+> **🔗 快速链接**: [工作计划](WORKPLAN.md) | [需求文档](PRD.md) | [拖拽功能文档](DRAG_WATERMARK_FEATURE.md)
 
 ---
 
-For more information, issues, or feature requests, visit the [GitHub repository](https://github.com/Sakiyary/ai4se-photo-watermark).
+## 项目简介
+
+这是一个基于 Python 开发的跨平台桌面水印处理应用程序，支持为图片批量添加文本或图片水印，提供直观的图形界面和实时预览功能。
+
+## 主要功能
+
+### 📂 文件处理
+
+- 支持单张/批量图片导入（拖拽、文件选择器、文件夹导入）
+- 支持主流图片格式：JPEG、PNG、BMP、TIFF
+- 智能的图片列表管理和预览功能
+
+### 🎨 水印类型
+
+- **文本水印**：自定义文本、字体、颜色、透明度、阴影、描边效果
+- **图片水印**：支持透明通道、尺寸调整、透明度控制
+
+### 🎯 精确定位
+
+- **九宫格快速定位**: 9个预设位置快速选择
+- **自由拖拽定位**: 鼠标直接拖动水印到任意位置
+- **对齐辅助线**: 红色中心线和橙色边缘线辅助对齐
+- **任意角度旋转**: 支持-180°到+180°任意角度
+- **实时预览效果**: 所见即所得的预览体验
+
+### ⚙️ 智能管理
+
+- 水印模板保存/加载
+- 批量处理功能
+- 多种导出格式和质量选项
+- 配置自动保存
+
+## 环境要求
+
+- **Python**: 3.11.4 (项目已配置venv虚拟环境)
+- **操作系统**: Windows 10+, macOS 10.14+, Ubuntu 18.04+
+- **内存**: 建议4GB以上
+- **存储**: 至少500MB可用空间
+
+## 项目结构
+
+```text
+📦 ai4se-photo-watermark/
+├── 📄 PRD.md                      # 详细功能需求说明
+├── 📄 WORKPLAN.md                 # 7周开发计划
+├── 📄 README.md                   # 项目说明文档
+├── 📄 requirements.txt            # 依赖包清单
+├── 📄 LICENSE                     # MIT开源协议
+├── 🐍 venv/                       # Python虚拟环境
+├── 📁 .watermark_config/          # 配置文件目录
+│   ├── config.json                # 应用配置
+│   └── templates/                 # 水印模板
+└── 📁 src/                        # 源代码目录
+    ├── 🐍 main.py                 # 应用程序入口
+    └── 📁 watermark_app/          # 主应用模块
+        ├── 📁 core/               # 核心业务逻辑
+        │   ├── __init__.py
+        │   ├── image_processor.py # 图像处理
+        │   ├── watermark.py       # 水印处理
+        │   ├── file_manager.py    # 文件管理
+        │   ├── config_manager.py  # 配置管理
+        │   └── exporter.py        # 图片导出
+        ├── 📁 gui/                # 图形界面
+        │   ├── __init__.py
+        │   ├── main_window.py     # 主窗口
+        │   ├── widgets/           # UI组件
+        │   │   ├── image_list_panel.py          # 图片列表面板
+        │   │   ├── preview_panel.py             # 预览面板
+        │   │   ├── watermark_control_panel.py   # 水印控制面板
+        │   │   └── position_control_panel.py    # 位置控制面板
+        │   └── dialogs/           # 对话框
+        │       ├── export_dialog.py      # 导出对话框
+        │       ├── template_dialog.py    # 模板对话框
+        │       ├── progress_dialog.py    # 进度对话框
+        │       ├── help_dialog.py        # 帮助对话框
+        │       └── about_dialog.py       # 关于对话框
+        └── 📁 utils/              # 工具函数
+            ├── __init__.py
+            ├── helpers.py         # 辅助函数
+            ├── constants.py       # 常量定义
+            ├── font_mapper.py     # 字体映射(1133+字体)
+            └── logger.py          # 日志系统
+```
+
+## 开发计划
+
+项目采用6周迭代开发模式：
+
+| 阶段 | 时间 | 主要任务 | 交付成果 |
+|------|------|----------|----------|
+| **第1周** | 项目基础搭建 | 架构设计、模块框架、基础GUI | 可启动的应用框架 |
+| **第2周** | 文件处理功能 | 图片导入、列表管理、预览功能 | 完整的文件处理模块 |
+| **第3周** | 水印功能实现 | 文本/图片水印、位置控制、变换 | 核心水印功能 |
+| **第4周** | 高级功能优化 | 实时预览、批量处理、导出功能 | 完整功能应用 |
+| **第5周** | 配置管理完善 | 模板系统、配置持久化、界面优化 | 用户体验优化 |
+| **第6周** | 测试和发布 | 全面测试、文档完善、应用打包 | 可发布版本 |
+
+## 技术特色
+
+### 🚀 高性能
+
+- 智能的内存管理机制
+- 优化的实时预览算法
+- 异步批量处理能力
+
+### 🎨 用户友好
+
+- 直观的图形界面设计
+- 实时预览和所见即所得
+- 丰富的快捷键支持
+
+### 🔧 高度可配置
+
+- 灵活的水印模板系统
+- 完善的配置管理
+- 多样化的导出选项
+
+### 🌐 跨平台兼容
+
+- 支持 Windows、macOS、Linux
+- 统一的用户体验
+- 一键打包部署
+
+## 快速开始
+
+### 方式一: 运行可执行文件 (推荐)
+
+**无需安装Python环境**
+
+1. 下载 `dist\WatermarkTool.exe`
+2. 双击运行即可使用
+3. 首次运行会在当前目录创建 `.watermark_config` 配置文件夹
+
+### 方式二: 从源码运行
+
+**需要Python 3.11+环境**
+
+### 1. 环境准备 (仅源码运行需要)
+
+```bash
+# 激活虚拟环境 (Windows)
+venv\Scripts\activate
+
+# 激活虚拟环境 (macOS/Linux)
+source venv/bin/activate
+
+# 安装依赖包
+pip install -r requirements.txt
+```
+
+### 2. 运行应用
+
+```bash
+# 方式一: 直接运行可执行文件
+dist\WatermarkTool.exe  # Windows
+./dist/WatermarkTool    # Linux/Mac
+
+# 方式二: 从源码运行
+cd src
+python main.py
+```
+
+## 打包应用
+
+如需自己打包应用,请参考 [打包指南](BUILD_GUIDE.md)
+
+**快速打包:**
+
+```bash
+# Windows
+build.bat
+
+# Linux/Mac
+chmod +x build.sh
+./build.sh
+```
+
+打包后的可执行文件位于 `dist/` 目录。
+
+## 开发状态
+
+| 模块 | 状态 | 进度 | 说明 |
+|------|------|------|------|
+| 📋 需求分析 | ✅ 完成 | 100% | 详细需求文档已完成 |
+| 📅 计划制定 | ✅ 完成 | 100% | 7周开发计划已完成 |
+| 🏗️ 架构设计 | ✅ 完成 | 100% | MVC架构,模块化设计 |
+| 💻 核心开发 | ✅ 完成 | 100% | 所有核心功能已实现 |
+| 🔧 功能完善 | ✅ 完成 | 100% | 拖拽定位、帮助系统 |
+| 📦 测试发布 | 🔄 进行中 | 30% | 正在打包可执行文件 |
+
+## 核心技术栈
+
+- **GUI框架**: Tkinter (Python标准库)
+- **图像处理**: Pillow (PIL)
+- **拖拽支持**: tkinterdnd2
+- **文件管理**: pathlib, os
+- **配置管理**: json
+- **应用打包**: PyInstaller
+- **代码规范**: PEP8
+
+## 项目亮点
+
+### ✨ 功能完整
+
+- 实现了PRD中的所有核心功能
+- 支持自由拖拽水印定位
+- 智能对齐辅助系统
+- 完整的帮助文档系统
+
+### 🎯 用户体验
+
+- 直观的图形界面
+- 实时预览效果
+- 丰富的快捷键支持
+- 详细的帮助说明
+
+### 🚀 技术实现
+
+- MVC架构设计
+- 模块化代码组织
+- 1133+字体支持
+- 智能内存管理
+
+### 📦 开箱即用
+
+- 一键打包为可执行文件
+- 无需Python环境即可运行
+- 跨平台兼容性好
+
+## 预期功能展示
+
+### 主界面预览
+
+```
+┌─────────────────────────────────────────────────┐
+│ 📁 文件  🎨 编辑  ⚙️ 设置  ❓ 帮助              │
+├─────────────────────────────────────────────────┤
+│ 📂 导入图片  📁 批量导入  💾 保存模板  🚀 开始处理 │
+├──────────────┬──────────────────────────────────┤
+│ 📋 图片列表   │ 🖼️ 预览窗口                      │
+│              │                                 │
+│ 🖼️ image1.jpg │        [实时预览区域]            │
+│ 🖼️ image2.png │                                 │
+│ 🖼️ image3.bmp │                                 │
+│              │                                 │
+├──────────────┼──────────────────────────────────┤
+│ 📝 水印设置   │ 📍 位置控制                      │
+│              │                                 │
+│ ☑️ 文本水印   │ [九宫格定位] [拖拽区域]          │
+│ ☐ 图片水印   │                                 │
+│              │ 🔄 旋转: [____] °               │
+│ 文本: [____] │ 📏 大小: [____] %               │
+│ 字体: [____] │ 🌈 透明度: [______] %           │
+│ 颜色: [____] │                                 │
+└──────────────┴──────────────────────────────────┘
+```
+
+## 贡献指南
+
+1. 查看[PRD.md](PRD.md)了解详细功能需求
+2. 参考[WORKPLAN.md](WORKPLAN.md)了解开发进度安排
+3. 遵循项目代码规范和开发流程
+4. 提交代码前请进行充分测试
+
+## 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+
+## 联系方式
+
+- **项目维护者**: Sakiyary
+- **开发周期**: 2025年10月3日 - 2025年10月3日 (1天完成)
+- **项目类型**: AI4SE课程作业
+- **完成度**: 98% (核心功能100%)
+
+## 相关文档
+
+- [产品需求文档 (PRD)](PRD.md) - 详细功能需求说明
+- [工作计划 (WORKPLAN)](WORKPLAN.md) - 7周开发计划
+- [拖拽功能文档](DRAG_WATERMARK_FEATURE.md) - 自由拖拽功能说明
+- [打包指南](BUILD_GUIDE.md) - 应用打包详细说明
+
+---
+
+**最后更新**: 2025年10月3日

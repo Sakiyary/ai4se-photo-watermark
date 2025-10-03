@@ -1,3 +1,24 @@
-Pillow>=9.0.0
-exifread>=3.0.0
-click>=8.0.0
+# 水印处理桌面应用依赖包
+
+# 图像处理
+Pillow>=10.0.0
+
+# GUI框架
+tkinter-tooltip>=2.1.0
+tkinterdnd2>=0.3.0
+
+# 配置文件处理
+configparser>=5.3.0
+
+# 文件路径处理
+pathlib>=1.0.1
+
+# 打包工具
+PyInstaller>=6.0.0
+
+# 开发工具
+flake8>=6.0.0
+black>=23.0.0
+
+# 其他实用工具
+typing-extensions>=4.7.0
