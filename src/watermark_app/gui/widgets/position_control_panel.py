@@ -82,6 +82,40 @@ class PositionControlPanel:
         btn.grid(row=row, column=col, padx=2, pady=2, sticky="nsew")
         self.position_buttons[pos_id] = btn
 
+      # 添加自定义位置选项
+      custom_btn = tk.Radiobutton(
+          position_frame,
+          text="自定义位置",
+          variable=self.selected_position,
+          value="custom",
+          command=self._on_position_change,
+          indicatoron=False
+      )
+      custom_btn.pack(pady=5)
+      self.position_buttons["custom"] = custom_btn
+
+      # 自定义坐标输入
+      custom_coord_frame = ttk.LabelFrame(position_frame, text="自定义坐标 (像素)")
+      custom_coord_frame.pack(fill=tk.X, pady=5)
+
+      # X 坐标
+      x_frame = ttk.Frame(custom_coord_frame)
+      x_frame.pack(fill=tk.X, pady=2)
+      ttk.Label(x_frame, text="X:").pack(side=tk.LEFT)
+      self.custom_x = tk.IntVar(value=20)
+      x_spinbox = ttk.Spinbox(x_frame, from_=0, to=10000, width=10,
+                              textvariable=self.custom_x, command=self._on_setting_change)
+      x_spinbox.pack(side=tk.RIGHT)
+
+      # Y 坐标
+      y_frame = ttk.Frame(custom_coord_frame)
+      y_frame.pack(fill=tk.X, pady=2)
+      ttk.Label(y_frame, text="Y:").pack(side=tk.LEFT)
+      self.custom_y = tk.IntVar(value=20)
+      y_spinbox = ttk.Spinbox(y_frame, from_=0, to=10000, width=10,
+                              textvariable=self.custom_y, command=self._on_setting_change)
+      y_spinbox.pack(side=tk.RIGHT)
+
       # 重置位置按钮（放在位置选择框内）
       ttk.Button(position_frame, text="重置位置",
                  command=self._reset_position).pack(pady=5)
@@ -133,7 +167,23 @@ class PositionControlPanel:
                  command=self._reset_rotation).pack(pady=5)
 
     except Exception as e:
-      self.logger.error(f"创建位置控制界面失败: {str(e)}")
+      self.logger.error(f"加载位置配置失败: {str(e)}")
+
+  def set_custom_position(self, x: int, y: int):
+    """
+    设置自定义位置
+
+    Args:
+        x: X坐标
+        y: Y坐标
+    """
+    try:
+      self.selected_position.set('custom')
+      self.custom_x.set(x)
+      self.custom_y.set(y)
+      self.logger.info(f"设置自定义位置: ({x}, {y})")
+    except Exception as e:
+      self.logger.error(f"设置自定义位置失败: {str(e)}")
 
   def _on_position_change(self):
     """位置改变"""
@@ -162,6 +212,11 @@ class PositionControlPanel:
         self.selected_position.set(default_position)
       else:
         self.selected_position.set("bottom_right")
+
+      # 重置自定义位置
+      self.custom_x.set(20)
+      self.custom_y.set(20)
+
       self._notify_change()
     except Exception as e:
       self.logger.error(f"重置位置失败: {str(e)}")
@@ -205,17 +260,18 @@ class PositionControlPanel:
   def get_config(self) -> Dict[str, Any]:
     """获取当前配置"""
     try:
-      config = {
+      return {
           'position': self.selected_position.get(),
           'margins': {
               'horizontal': self.h_margin.get(),
               'vertical': self.v_margin.get()
           },
-          'rotation': self.rotation.get()
+          'rotation': self.rotation.get(),
+          'custom_x': self.custom_x.get(),
+          'custom_y': self.custom_y.get()
       }
-      return config
     except Exception as e:
-      self.logger.error(f"获取配置失败: {str(e)}")
+      self.logger.error(f"获取位置配置失败: {str(e)}")
       return {}
 
   def load_config(self, config: Dict[str, Any]):
@@ -226,17 +282,23 @@ class PositionControlPanel:
 
       if 'margins' in config:
         margins = config['margins']
-        if 'horizontal' in margins:
-          self.h_margin.set(margins['horizontal'])
-        if 'vertical' in margins:
-          self.v_margin.set(margins['vertical'])
+        if isinstance(margins, dict):
+          self.h_margin.set(margins.get('horizontal', 20))
+          self.v_margin.set(margins.get('vertical', 20))
 
       if 'rotation' in config:
-        self.rotation.set(config['rotation'])
-        self.rotation_label.config(text=f"{config['rotation']}°")
+        rotation_value = int(config['rotation'])
+        self.rotation.set(rotation_value)
+        self.rotation_label.config(text=f"{rotation_value}°")
+
+      if 'custom_x' in config:
+        self.custom_x.set(config['custom_x'])
+
+      if 'custom_y' in config:
+        self.custom_y.set(config['custom_y'])
 
     except Exception as e:
-      self.logger.error(f"载入配置失败: {str(e)}")
+      self.logger.error(f"加载位置配置失败: {str(e)}")
 
   def get_position_coordinates(self, image_size: Tuple[int, int],
                                watermark_size: Tuple[int, int]) -> Tuple[int, int]:

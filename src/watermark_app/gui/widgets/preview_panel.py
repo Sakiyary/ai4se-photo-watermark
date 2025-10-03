@@ -48,6 +48,14 @@ class PreviewPanel:
     self.drag_start_y = 0
     self.is_dragging = False
 
+    # 水印拖拽相关
+    self.watermark_bounds = None  # 水印边界 (x, y, width, height)
+    self.is_dragging_watermark = False  # 是否正在拖拽水印
+    self.watermark_drag_offset = (0, 0)  # 拖拽偏移
+    self.show_alignment_guides = False  # 是否显示对齐线
+    self.alignment_lines = []  # 对齐线列表
+    self.preview_image = None  # 保存预览图像引用
+
     # 创建界面
     self._create_widgets()
 
@@ -150,25 +158,30 @@ class PreviewPanel:
     except Exception as e:
       self.logger.error(f"创建预览界面失败: {str(e)}")
 
-  def update_preview(self, image: Image.Image, image_info: str = ""):
+  def update_preview(self, image: Image.Image, image_info: str = "", watermark_bounds: Tuple[int, int, int, int] = None):
     """
     更新预览图像
 
     Args:
         image: PIL图像对象
         image_info: 图像信息字符串
+        watermark_bounds: 水印边界 (x, y, width, height) 在原图坐标系中
     """
     try:
-      if not image:
-        self.clear_preview()
-        return
-
       self.current_image = image
+      self.preview_image = image  # 保存引用
       self.image_info = image_info
+      self.watermark_bounds = watermark_bounds
 
-      # 默认使用适应窗口大小
-      self._fit_to_window()
-      self._update_info_label()
+      if image:
+        # 每次加载新图片时都自动适应窗口
+        self._fit_to_window()
+        self._update_info_label()
+        # 绘制水印边界框(如果有)
+        if watermark_bounds:
+          self._draw_watermark_bounds()
+      else:
+        self.clear_preview()
 
     except Exception as e:
       self.logger.error(f"更新预览失败: {str(e)}")
@@ -359,34 +372,73 @@ class PreviewPanel:
       self.drag_start_x = event.x
       self.drag_start_y = event.y
       self.is_dragging = False
+      self.is_dragging_watermark = False
+
+      # 检查是否点击了水印
+      if self._is_point_in_watermark(event.x, event.y):
+        self.is_dragging_watermark = True
+        # 计算拖拽偏移（鼠标相对于水印左上角的偏移）
+        if self.watermark_bounds:
+          canvas_x = self.canvas.canvasx(event.x)
+          canvas_y = self.canvas.canvasy(event.y)
+          offset_x, offset_y = self._get_image_offset()
+          watermark_canvas_x = offset_x + \
+              self.watermark_bounds[0] * self.scale_factor
+          watermark_canvas_y = offset_y + \
+              self.watermark_bounds[1] * self.scale_factor
+          self.watermark_drag_offset = (
+              canvas_x - watermark_canvas_x,
+              canvas_y - watermark_canvas_y
+          )
+        self.logger.info("开始拖拽水印")
     except Exception as e:
       self.logger.error(f"处理画布点击失败: {str(e)}")
 
   def _on_canvas_drag(self, event):
     """画布拖拽事件"""
     try:
-      if not self.is_dragging:
-        # 检查是否开始拖拽
-        dx = abs(event.x - self.drag_start_x)
-        dy = abs(event.y - self.drag_start_y)
-        if dx > 3 or dy > 3:  # 阈值
-          self.is_dragging = True
-
-      if self.is_dragging and self.on_position_change:
-        # 计算水印位置（简化版）
+      if self.is_dragging_watermark:
+        # 拖拽水印
         canvas_x = self.canvas.canvasx(event.x)
         canvas_y = self.canvas.canvasy(event.y)
 
+        # 获取图像偏移
+        offset_x, offset_y = self._get_image_offset()
+
+        # 计算水印新位置（考虑拖拽偏移和图像偏移）
+        new_watermark_x = canvas_x - self.watermark_drag_offset[0] - offset_x
+        new_watermark_y = canvas_y - self.watermark_drag_offset[1] - offset_y
+
         # 转换为图像坐标
         if self.current_image and self.scale_factor > 0:
-          img_x = int(canvas_x / self.scale_factor)
-          img_y = int(canvas_y / self.scale_factor)
+          img_x = int(new_watermark_x / self.scale_factor)
+          img_y = int(new_watermark_y / self.scale_factor)
 
           # 限制在图像范围内
-          img_x = max(0, min(img_x, self.current_image.width))
-          img_y = max(0, min(img_y, self.current_image.height))
+          if self.watermark_bounds:
+            watermark_width = self.watermark_bounds[2]
+            watermark_height = self.watermark_bounds[3]
+            img_x = max(
+                0, min(img_x, self.current_image.width - watermark_width))
+            img_y = max(
+                0, min(img_y, self.current_image.height - watermark_height))
+          else:
+            img_x = max(0, min(img_x, self.current_image.width))
+            img_y = max(0, min(img_y, self.current_image.height))
 
-          self.on_position_change((img_x, img_y))
+          # 绘制辅助对齐线
+          self._draw_alignment_guides(img_x, img_y)
+
+          # 通知位置改变
+          if self.on_position_change:
+            self.on_position_change((img_x, img_y))
+      else:
+        # 原有的画布拖拽逻辑（暂时保留）
+        if not self.is_dragging:
+          dx = abs(event.x - self.drag_start_x)
+          dy = abs(event.y - self.drag_start_y)
+          if dx > 3 or dy > 3:
+            self.is_dragging = True
 
     except Exception as e:
       self.logger.error(f"处理画布拖拽失败: {str(e)}")
@@ -394,7 +446,13 @@ class PreviewPanel:
   def _on_canvas_release(self, event):
     """画布释放事件"""
     try:
+      if self.is_dragging_watermark:
+        self.logger.info("完成水印拖拽")
+        # 清除对齐线
+        self._clear_alignment_guides()
+
       self.is_dragging = False
+      self.is_dragging_watermark = False
     except Exception as e:
       self.logger.error(f"处理画布释放失败: {str(e)}")
 
@@ -412,7 +470,210 @@ class PreviewPanel:
   def _on_canvas_configure(self, event):
     """画布配置改变事件"""
     try:
-      if not self.current_image:
-        self._show_placeholder()
+      # 窗口大小改变时重新显示图像
+      if self.current_image:
+        self._display_image()
     except Exception as e:
       self.logger.error(f"处理画布配置改变失败: {str(e)}")
+
+  def _get_image_offset(self) -> Tuple[int, int]:
+    """获取图像在画布上的偏移量（用于居中显示）"""
+    try:
+      if not self.display_image:
+        return (0, 0)
+
+      canvas_width = self.canvas.winfo_width()
+      canvas_height = self.canvas.winfo_height()
+
+      if canvas_width <= 1 or canvas_height <= 1:
+        canvas_width = 800
+        canvas_height = 600
+
+      display_width = int(self.current_image.width * self.scale_factor)
+      display_height = int(self.current_image.height * self.scale_factor)
+
+      # 计算居中位置时的偏移
+      offset_x = max(0, (canvas_width - display_width) // 2)
+      offset_y = max(0, (canvas_height - display_height) // 2)
+
+      return (offset_x, offset_y)
+    except Exception as e:
+      self.logger.error(f"获取图像偏移失败: {str(e)}")
+      return (0, 0)
+
+  def _is_point_in_watermark(self, x: int, y: int) -> bool:
+    """检查点是否在水印范围内"""
+    try:
+      if not self.watermark_bounds or not self.scale_factor:
+        return False
+
+      canvas_x = self.canvas.canvasx(x)
+      canvas_y = self.canvas.canvasy(y)
+
+      # 获取图像偏移
+      offset_x, offset_y = self._get_image_offset()
+
+      # 水印在画布上的位置和大小（考虑图像偏移）
+      wm_x = offset_x + self.watermark_bounds[0] * self.scale_factor
+      wm_y = offset_y + self.watermark_bounds[1] * self.scale_factor
+      wm_width = self.watermark_bounds[2] * self.scale_factor
+      wm_height = self.watermark_bounds[3] * self.scale_factor
+
+      # 检查点是否在矩形内
+      return (wm_x <= canvas_x <= wm_x + wm_width and
+              wm_y <= canvas_y <= wm_y + wm_height)
+    except Exception as e:
+      self.logger.error(f"检查水印点击失败: {str(e)}")
+      return False
+
+  def _draw_watermark_bounds(self):
+    """绘制水印边界框"""
+    try:
+      if not self.watermark_bounds or not self.scale_factor:
+        return
+
+      # 删除旧的边界框
+      self.canvas.delete('watermark_bounds')
+
+      # 获取图像偏移
+      offset_x, offset_y = self._get_image_offset()
+
+      # 计算边界框在画布上的位置（考虑图像偏移）
+      x = offset_x + self.watermark_bounds[0] * self.scale_factor
+      y = offset_y + self.watermark_bounds[1] * self.scale_factor
+      width = self.watermark_bounds[2] * self.scale_factor
+      height = self.watermark_bounds[3] * self.scale_factor
+
+      # 绘制虚线边界框
+      self.canvas.create_rectangle(
+          x, y, x + width, y + height,
+          outline='blue',
+          width=2,
+          dash=(5, 3),
+          tags='watermark_bounds'
+      )
+
+      # 绘制四个角的控制点
+      corner_size = 8
+      corners = [
+          (x, y),  # 左上
+          (x + width, y),  # 右上
+          (x, y + height),  # 左下
+          (x + width, y + height)  # 右下
+      ]
+      for cx, cy in corners:
+        self.canvas.create_rectangle(
+            cx - corner_size/2, cy - corner_size/2,
+            cx + corner_size/2, cy + corner_size/2,
+            fill='blue',
+            outline='white',
+            tags='watermark_bounds'
+        )
+    except Exception as e:
+      self.logger.error(f"绘制水印边界失败: {str(e)}")
+
+  def _draw_alignment_guides(self, img_x: int, img_y: int):
+    """绘制辅助对齐线"""
+    try:
+      # 清除旧的对齐线
+      self._clear_alignment_guides()
+
+      if not self.current_image or not self.watermark_bounds:
+        return
+
+      img_width = self.current_image.width
+      img_height = self.current_image.height
+      wm_width = self.watermark_bounds[2]
+      wm_height = self.watermark_bounds[3]
+
+      # 水印中心点
+      wm_center_x = img_x + wm_width // 2
+      wm_center_y = img_y + wm_height // 2
+
+      # 图像中心点
+      img_center_x = img_width // 2
+      img_center_y = img_height // 2
+
+      # 对齐阈值（像素）
+      threshold = 10
+
+      # 获取图像偏移
+      offset_x, offset_y = self._get_image_offset()
+
+      # 检查水平居中对齐
+      if abs(wm_center_x - img_center_x) < threshold:
+        # 绘制垂直中心线
+        x = offset_x + img_center_x * self.scale_factor
+        self.canvas.create_line(
+            x, offset_y, x, offset_y + img_height * self.scale_factor,
+            fill='red',
+            width=1,
+            dash=(3, 3),
+            tags='alignment_guide'
+        )
+
+      # 检查垂直居中对齐
+      if abs(wm_center_y - img_center_y) < threshold:
+        # 绘制水平中心线
+        y = offset_y + img_center_y * self.scale_factor
+        self.canvas.create_line(
+            offset_x, y, offset_x + img_width * self.scale_factor, y,
+            fill='red',
+            width=1,
+            dash=(3, 3),
+            tags='alignment_guide'
+        )
+
+      # 检查左边缘对齐
+      if abs(img_x) < threshold:
+        x = offset_x
+        self.canvas.create_line(
+            x, offset_y, x, offset_y + img_height * self.scale_factor,
+            fill='orange',
+            width=1,
+            dash=(3, 3),
+            tags='alignment_guide'
+        )
+
+      # 检查右边缘对齐
+      if abs(img_x + wm_width - img_width) < threshold:
+        x = offset_x + img_width * self.scale_factor
+        self.canvas.create_line(
+            x, offset_y, x, offset_y + img_height * self.scale_factor,
+            fill='orange',
+            width=1,
+            dash=(3, 3),
+            tags='alignment_guide'
+        )
+
+      # 检查上边缘对齐
+      if abs(img_y) < threshold:
+        y = offset_y
+        self.canvas.create_line(
+            offset_x, y, offset_x + img_width * self.scale_factor, y,
+            fill='orange',
+            width=1,
+            dash=(3, 3),
+            tags='alignment_guide'
+        )
+
+      # 检查下边缘对齐
+      if abs(img_y + wm_height - img_height) < threshold:
+        y = offset_y + img_height * self.scale_factor
+        self.canvas.create_line(
+            offset_x, y, offset_x + img_width * self.scale_factor, y,
+            fill='orange',
+            width=1,
+            dash=(3, 3),
+            tags='alignment_guide'
+        )
+
+    except Exception as e:
+      self.logger.error(f"绘制对齐线失败: {str(e)}")
+
+  def _clear_alignment_guides(self):
+    """清除对齐线"""
+    try:
+      self.canvas.delete('alignment_guide')
+    except Exception as e:
+      self.logger.error(f"清除对齐线失败: {str(e)}")

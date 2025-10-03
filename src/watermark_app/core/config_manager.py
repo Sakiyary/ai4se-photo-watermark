@@ -21,7 +21,7 @@ class ConfigManager:
 
   DEFAULT_CONFIG = {
       'app': {
-          'version': '1.0.0',
+          'version': '2.0.0',
           'window_size': [1200, 800],
           'window_position': [100, 100],
           'last_input_directory': '',

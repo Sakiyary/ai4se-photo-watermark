@@ -6,8 +6,9 @@
 
 # 应用信息
 APP_NAME = "图片水印处理工具"
-APP_VERSION = "1.0.0"
-APP_AUTHOR = "AI Assistant"
+APP_VERSION = "2.0.0"
+APP_AUTHOR = "Sakiyary"
+APP_DESCRIPTION = "一款简单易用的图片批量水印处理工具,支持自定义水印样式、位置调整和批量导出"
 
 # 窗口设置
 DEFAULT_WINDOW_SIZE = (1200, 800)
@@ -17,7 +18,7 @@ DEFAULT_WINDOW_POSITION = (100, 100)
 # 文件相关
 SUPPORTED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif'}
 SUPPORTED_MIME_TYPES = {
-    'image/jpeg', 'image/jpg', 'image/png', 
+    'image/jpeg', 'image/jpg', 'image/png',
     'image/bmp', 'image/tiff', 'image/x-ms-bmp'
 }
 
@@ -36,7 +37,7 @@ DEFAULT_STROKE_COLOR = (0, 0, 0, 255)      # 黑色不透明
 # 位置预设
 POSITION_PRESETS = {
     'top_left': '左上角',
-    'top_center': '正上方', 
+    'top_center': '正上方',
     'top_right': '右上角',
     'middle_left': '左中',
     'center': '正中心',
@@ -61,7 +62,7 @@ OUTPUT_FORMATS = {
         'supports_quality': True
     },
     'jpg': {
-        'name': 'JPEG',  
+        'name': 'JPEG',
         'extension': '.jpg',
         'supports_transparency': False,
         'supports_quality': True

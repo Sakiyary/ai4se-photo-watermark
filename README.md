@@ -1,12 +1,12 @@
 # 图片水印处理桌面应用
 
 ![Python](https://img.shields.io/badge/Python-3.11.4-blue)
-![Progress](https://img.shields.io/badge/进度-92%25-yellow)
-![Status](https://img.shields.io/badge/状态-开发中-orange)
+![Progress](https://img.shields.io/badge/进度-98%25-green)
+![Status](https://img.shields.io/badge/状态-打包发布-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-> **📊 项目状态**: 核心功能基本完成，水印自由拖拽定位功能开发中  
-> **🔗 快速链接**: [功能状态](FEATURE_STATUS.md) | [工作计划](WORKPLAN.md) | [需求文档](PRD.md)
+> **📊 项目状态**: 核心功能已全部完成，正在打包发布  
+> **🔗 快速链接**: [工作计划](WORKPLAN.md) | [需求文档](PRD.md) | [拖拽功能文档](DRAG_WATERMARK_FEATURE.md)
 
 ---
 
@@ -29,10 +29,11 @@
 
 ### 🎯 精确定位
 
-- 九宫格快速定位
-- 自由拖拽定位
-- 任意角度旋转
-- 实时预览效果
+- **九宫格快速定位**: 9个预设位置快速选择
+- **自由拖拽定位**: 鼠标直接拖动水印到任意位置
+- **对齐辅助线**: 红色中心线和橙色边缘线辅助对齐
+- **任意角度旋转**: 支持-180°到+180°任意角度
+- **实时预览效果**: 所见即所得的预览体验
 
 ### ⚙️ 智能管理
 
@@ -50,20 +51,47 @@
 
 ## 项目结构
 
-```
+```text
 📦 ai4se-photo-watermark/
-├── 📄 PRD.md               # 详细功能需求说明
-├── 📄 WORKPLAN.md          # 6周开发计划
-├── 📄 README.md            # 项目说明文档
-├── 🐍 venv/                # Python虚拟环境
-├── 📁 src/                 # 源代码目录（待创建）
-│   ├── 🐍 main.py          # 应用程序入口
-│   └── 📁 watermark_app/   # 主应用模块
-│       ├── 📁 core/        # 核心业务逻辑
-│       ├── 📁 gui/         # 图形界面
-│       ├── 📁 utils/       # 工具函数
-│       └── 📁 resources/   # 资源文件
-└── 📄 requirements.txt     # 依赖包清单（待创建）
+├── 📄 PRD.md                      # 详细功能需求说明
+├── 📄 WORKPLAN.md                 # 7周开发计划
+├── 📄 README.md                   # 项目说明文档
+├── 📄 requirements.txt            # 依赖包清单
+├── 📄 LICENSE                     # MIT开源协议
+├── 🐍 venv/                       # Python虚拟环境
+├── 📁 .watermark_config/          # 配置文件目录
+│   ├── config.json                # 应用配置
+│   └── templates/                 # 水印模板
+└── 📁 src/                        # 源代码目录
+    ├── 🐍 main.py                 # 应用程序入口
+    └── 📁 watermark_app/          # 主应用模块
+        ├── 📁 core/               # 核心业务逻辑
+        │   ├── __init__.py
+        │   ├── image_processor.py # 图像处理
+        │   ├── watermark.py       # 水印处理
+        │   ├── file_manager.py    # 文件管理
+        │   ├── config_manager.py  # 配置管理
+        │   └── exporter.py        # 图片导出
+        ├── 📁 gui/                # 图形界面
+        │   ├── __init__.py
+        │   ├── main_window.py     # 主窗口
+        │   ├── widgets/           # UI组件
+        │   │   ├── image_list_panel.py          # 图片列表面板
+        │   │   ├── preview_panel.py             # 预览面板
+        │   │   ├── watermark_control_panel.py   # 水印控制面板
+        │   │   └── position_control_panel.py    # 位置控制面板
+        │   └── dialogs/           # 对话框
+        │       ├── export_dialog.py      # 导出对话框
+        │       ├── template_dialog.py    # 模板对话框
+        │       ├── progress_dialog.py    # 进度对话框
+        │       ├── help_dialog.py        # 帮助对话框
+        │       └── about_dialog.py       # 关于对话框
+        └── 📁 utils/              # 工具函数
+            ├── __init__.py
+            ├── helpers.py         # 辅助函数
+            ├── constants.py       # 常量定义
+            ├── font_mapper.py     # 字体映射(1133+字体)
+            └── logger.py          # 日志系统
 ```
 
 ## 开发计划
@@ -107,7 +135,19 @@
 
 ## 快速开始
 
-### 1. 环境准备
+### 方式一: 运行可执行文件 (推荐)
+
+**无需安装Python环境**
+
+1. 下载 `dist\WatermarkTool.exe`
+2. 双击运行即可使用
+3. 首次运行会在当前目录创建 `.watermark_config` 配置文件夹
+
+### 方式二: 从源码运行
+
+**需要Python 3.11+环境**
+
+### 1. 环境准备 (仅源码运行需要)
 
 ```bash
 # 激活虚拟环境 (Windows)
@@ -116,40 +156,88 @@ venv\Scripts\activate
 # 激活虚拟环境 (macOS/Linux)
 source venv/bin/activate
 
-# 安装依赖包（后续开发完成后）
+# 安装依赖包
 pip install -r requirements.txt
 ```
 
 ### 2. 运行应用
 
 ```bash
-# 进入源码目录
-cd src
+# 方式一: 直接运行可执行文件
+dist\WatermarkTool.exe  # Windows
+./dist/WatermarkTool    # Linux/Mac
 
-# 启动应用
+# 方式二: 从源码运行
+cd src
 python main.py
 ```
+
+## 打包应用
+
+如需自己打包应用,请参考 [打包指南](BUILD_GUIDE.md)
+
+**快速打包:**
+
+```bash
+# Windows
+build.bat
+
+# Linux/Mac
+chmod +x build.sh
+./build.sh
+```
+
+打包后的可执行文件位于 `dist/` 目录。
 
 ## 开发状态
 
 | 模块 | 状态 | 进度 | 说明 |
 |------|------|------|------|
 | 📋 需求分析 | ✅ 完成 | 100% | 详细需求文档已完成 |
-| 📅 计划制定 | ✅ 完成 | 100% | 6周开发计划已制定 |
-| 🏗️ 架构设计 | ⏳ 待开始 | 0% | 第1周任务 |
-| 💻 核心开发 | ⏳ 待开始 | 0% | 第2-4周任务 |
-| 🔧 功能完善 | ⏳ 待开始 | 0% | 第5周任务 |
-| 📦 测试发布 | ⏳ 待开始 | 0% | 第6周任务 |
+| 📅 计划制定 | ✅ 完成 | 100% | 7周开发计划已完成 |
+| 🏗️ 架构设计 | ✅ 完成 | 100% | MVC架构,模块化设计 |
+| 💻 核心开发 | ✅ 完成 | 100% | 所有核心功能已实现 |
+| 🔧 功能完善 | ✅ 完成 | 100% | 拖拽定位、帮助系统 |
+| 📦 测试发布 | 🔄 进行中 | 30% | 正在打包可执行文件 |
 
 ## 核心技术栈
 
-- **GUI框架**: Tkinter / PyQt5-6
+- **GUI框架**: Tkinter (Python标准库)
 - **图像处理**: Pillow (PIL)
+- **拖拽支持**: tkinterdnd2
 - **文件管理**: pathlib, os
-- **配置管理**: json, configparser
+- **配置管理**: json
 - **应用打包**: PyInstaller
-- **测试框架**: pytest
-- **代码规范**: PEP8, flake8
+- **代码规范**: PEP8
+
+## 项目亮点
+
+### ✨ 功能完整
+
+- 实现了PRD中的所有核心功能
+- 支持自由拖拽水印定位
+- 智能对齐辅助系统
+- 完整的帮助文档系统
+
+### 🎯 用户体验
+
+- 直观的图形界面
+- 实时预览效果
+- 丰富的快捷键支持
+- 详细的帮助说明
+
+### 🚀 技术实现
+
+- MVC架构设计
+- 模块化代码组织
+- 1133+字体支持
+- 智能内存管理
+
+### 📦 开箱即用
+
+- 一键打包为可执行文件
+- 无需Python环境即可运行
+- 跨平台兼容性好
 
 ## 预期功能展示
 
@@ -192,10 +280,18 @@ python main.py
 
 ## 联系方式
 
-- **项目维护者**: [您的姓名]
-- **开发周期**: 2025年10月3日 - 2025年11月14日
+- **项目维护者**: Sakiyary
+- **开发周期**: 2025年10月3日 - 2025年10月3日 (1天完成)
 - **项目类型**: AI4SE课程作业
+- **完成度**: 98% (核心功能100%)
+
+## 相关文档
+
+- [产品需求文档 (PRD)](PRD.md) - 详细功能需求说明
+- [工作计划 (WORKPLAN)](WORKPLAN.md) - 7周开发计划
+- [拖拽功能文档](DRAG_WATERMARK_FEATURE.md) - 自由拖拽功能说明
+- [打包指南](BUILD_GUIDE.md) - 应用打包详细说明
 
 ---
 
-*最后更新: 2025年10月3日*
+**最后更新**: 2025年10月3日

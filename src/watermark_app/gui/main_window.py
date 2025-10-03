@@ -23,6 +23,8 @@ from .widgets.position_control_panel import PositionControlPanel
 from .dialogs.progress_dialog import ProgressDialog
 from .dialogs.export_dialog import ExportDialog
 from .dialogs.template_dialog import TemplateDialog
+from .dialogs.help_dialog import HelpDialog
+from .dialogs.about_dialog import AboutDialog
 
 logger = logging.getLogger(__name__)
 
@@ -425,7 +427,11 @@ class MainWindow:
   def _on_watermark_position_change(self, position=None):
     """水印位置改变事件"""
     if position and self.position_control_panel:
-      self.position_control_panel.update_position(position)
+      # 当从预览面板拖拽水印时,position是(x, y)坐标
+      if isinstance(position, tuple) and len(position) == 2:
+        # 设置为自定义位置
+        self.position_control_panel.set_custom_position(
+            position[0], position[1])
     self._update_preview()
 
   def _update_preview(self):
@@ -444,15 +450,16 @@ class MainWindow:
         position_config = self.position_control_panel.get_config()
 
       # 生成水印预览
-      preview_image = self._apply_watermark_to_image(
-          self.current_image, watermark_config, position_config)
+      preview_image, watermark_bounds = self._apply_watermark_to_image(
+          self.current_image, watermark_config, position_config, return_bounds=True)
 
       if preview_image:
         self.current_preview_image = preview_image
 
         # 生成图片信息
         image_info = self._get_current_image_info()
-        self.preview_panel.update_preview(preview_image, image_info)
+        self.preview_panel.update_preview(
+            preview_image, image_info, watermark_bounds)
 
     except Exception as e:
       self.logger.error(f"更新预览失败: {str(e)}")
@@ -485,18 +492,19 @@ class MainWindow:
       self.logger.error(f"获取图片信息失败: {str(e)}")
       return ""
 
-  def _apply_watermark_to_image(self, image, watermark_config, position_config):
+  def _apply_watermark_to_image(self, image, watermark_config, position_config, return_bounds=False):
     """应用水印到图像"""
     try:
       if not image:
-        return image
+        return (image, None) if return_bounds else image
 
       # 如果没有水印配置，直接返回原图
       if not watermark_config or watermark_config.get('type') not in ['text', 'image']:
-        return image
+        return (image, None) if return_bounds else image
 
       # 创建图像副本避免修改原图
       result_image = image.copy()
+      watermark_bounds = None  # (x, y, width, height)
 
       # 根据水印类型生成水印
       watermark = None
@@ -589,16 +597,20 @@ class MainWindow:
             result_image.size, watermark.size, position_config
         )
 
+        # 记录水印边界
+        watermark_bounds = (position[0], position[1],
+                            watermark.width, watermark.height)
+
         # 应用水印
         result_image = self.watermark_processor.apply_watermark(
             result_image, watermark, position
         )
 
-      return result_image
+      return (result_image, watermark_bounds) if return_bounds else result_image
 
     except Exception as e:
       self.logger.error(f"应用水印失败: {str(e)}")
-      return image
+      return (image, None) if return_bounds else image
 
   def _calculate_watermark_position(self, image_size, watermark_size, position_config):
     """
@@ -625,6 +637,13 @@ class MainWindow:
 
       # 获取位置配置
       position = position_config.get('position', 'bottom_right')
+
+      # 检查是否为自定义位置
+      if position == 'custom':
+        # 使用自定义坐标
+        custom_x = position_config.get('custom_x', h_margin)
+        custom_y = position_config.get('custom_y', v_margin)
+        return (custom_x, custom_y)
 
       # 根据位置计算坐标
       position_map = {
@@ -909,7 +928,7 @@ class MainWindow:
       file_paths = filedialog.askopenfilenames(
           title="选择图片文件",
           filetypes=[
-              ("图片文件", "*.jpg *.jpeg *.png *.bmp *.tiff *.gif"),
+              ("图片文件", "*.jpg *.jpeg *.png *.bmp *.tiff"),
               ("JPEG文件", "*.jpg *.jpeg"),
               ("PNG文件", "*.png"),
               ("BMP文件", "*.bmp"),
@@ -1326,10 +1345,22 @@ class MainWindow:
       messagebox.showerror("错误", f"模板管理失败: {str(e)}")
 
   def _show_help(self):
-    pass
+    """显示使用说明"""
+    try:
+      help_dialog = HelpDialog(self.root)
+      help_dialog.show()
+    except Exception as e:
+      self.logger.error(f"显示使用说明失败: {str(e)}")
+      messagebox.showerror("错误", f"无法打开使用说明: {str(e)}")
 
   def _show_about(self):
-    pass
+    """显示关于对话框"""
+    try:
+      about_dialog = AboutDialog(self.root)
+      about_dialog.show()
+    except Exception as e:
+      self.logger.error(f"显示关于对话框失败: {str(e)}")
+      messagebox.showerror("错误", f"无法打开关于对话框: {str(e)}")
 
   def _setup_keyboard_shortcuts(self):
     """设置键盘快捷键"""

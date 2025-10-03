@@ -1,12 +1,12 @@
 {
   "app": {
-    "version": "1.0.0",
+    "version": "2.0.0",
     "window_size": [
-      1396,
+      1200,
       800
     ],
     "window_position": [
-      582,
+      680,
       320
     ],
     "last_input_directory": "",
@@ -18,7 +18,7 @@
       "content": "watermark",
       "font_family": "arial",
       "font_size": 36,
-      "color": "#ffffff",
+      "color": "#FFFFFF",
       "opacity": 0.8,
       "shadow_enabled": true,
       "stroke_enabled": false,
@@ -27,17 +27,19 @@
       "italic": false
     },
     "image": {
-      "path": "",
-      "scale": 0.25,
-      "opacity": 1.0
+      "path": "C:/Users/Sakiyary/Pictures/Saved Pictures/CPL_favicon.png",
+      "scale": 0.35,
+      "opacity": 0.5
     },
     "position": {
-      "position": "bottom_right",
+      "position": "custom",
       "margins": {
-        "horizontal": 48,
-        "vertical": 36
+        "horizontal": 20,
+        "vertical": 20
       },
-      "rotation": 0
+      "rotation": 0,
+      "custom_x": 157,
+      "custom_y": 47
     },
     "output": {
       "format": "png",
@@ -50,6 +52,6 @@
       "naming_prefix": "wm_",
       "naming_suffix": "_watermarked"
     },
-    "type": "text"
+    "type": "image"
   }
 }
