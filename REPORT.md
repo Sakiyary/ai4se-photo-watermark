@@ -5,6 +5,7 @@
 **开发者**: Sakiyary 522025320090 李薛成  
 **完成日期**: 2025年10月3日  
 **完成度**: 100%
+**项目地址**: [https://github.com/Sakiyary/ai4se-photo-watermark](https://github.com/Sakiyary/ai4se-photo-watermark)
 
 ---
 

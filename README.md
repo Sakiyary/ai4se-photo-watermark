@@ -1,12 +1,12 @@
 # 图片水印处理桌面应用
 
 ![Python](https://img.shields.io/badge/Python-3.11.4-blue)
-![Progress](https://img.shields.io/badge/进度-98%25-green)
-![Status](https://img.shields.io/badge/状态-打包发布-brightgreen)
+![Progress](https://img.shields.io/badge/进度-100%25-brightgreen)
+![Status](https://img.shields.io/badge/状态-完成-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 > **📊 项目状态**: 核心功能已全部完成，正在打包发布  
-> **🔗 快速链接**: [工作计划](WORKPLAN.md) | [需求文档](PRD.md) | [拖拽功能文档](DRAG_WATERMARK_FEATURE.md)
+> **🔗 快速链接**: [工作计划](WORKPLAN.md) | [需求文档](PRD.md) | [课程报告](REPORT.md)
 
 ---
 
@@ -283,7 +283,7 @@ chmod +x build.sh
 - **项目维护者**: Sakiyary
 - **开发周期**: 2025年10月3日 - 2025年10月3日 (1天完成)
 - **项目类型**: AI4SE课程作业
-- **完成度**: 98% (核心功能100%)
+- **完成度**: 100% (核心功能100%)
 
 ## 相关文档
 
