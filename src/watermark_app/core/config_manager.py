@@ -30,8 +30,8 @@ class ConfigManager:
       },
       'watermark': {
           'text': {
-              'content': '水印文本',
-              'font_family': '',
+              'content': 'watermark',
+              'font_family': 'arial',
               'font_size': 36,
               'color': [255, 255, 255, 128],
               'bold': False,
@@ -39,7 +39,7 @@ class ConfigManager:
               'shadow': False,
               'shadow_offset': [2, 2],
               'shadow_color': [0, 0, 0, 64],
-              'stroke_width': 0,
+              'stroke_width': 1,
               'stroke_color': [0, 0, 0, 255]
           },
           'image': {
@@ -52,7 +52,10 @@ class ConfigManager:
               'preset': 'bottom_right',  # 九宫格位置
               'custom_x': 0,
               'custom_y': 0,
-              'margin': 20,
+              'margins': {
+                  'horizontal': 20,
+                  'vertical': 20
+              },
               'rotation': 0.0
           },
           'output': {
@@ -82,8 +85,22 @@ class ConfigManager:
     if config_dir:
       self.config_dir = Path(config_dir)
     else:
-      # 使用用户home目录下的.watermark_app文件夹
-      self.config_dir = Path.home() / '.watermark_app'
+      # 优先使用当前工作目录，如果不可写则使用系统临时目录
+      try:
+        # 尝试在当前工作目录创建配置文件夹
+        current_dir = Path.cwd() / '.watermark_config'
+        current_dir.mkdir(exist_ok=True)
+        # 测试是否可写
+        test_file = current_dir / '.test'
+        test_file.write_text('test')
+        test_file.unlink()
+        self.config_dir = current_dir
+        self.logger.info(f"使用当前目录保存配置: {self.config_dir}")
+      except (PermissionError, OSError):
+        # 如果当前目录不可写，使用系统临时目录
+        import tempfile
+        self.config_dir = Path(tempfile.gettempdir()) / 'watermark_app'
+        self.logger.info(f"使用临时目录保存配置: {self.config_dir}")
 
     self.config_dir.mkdir(exist_ok=True)
 
@@ -245,7 +262,22 @@ class ConfigManager:
     Returns:
         bool: 是否成功设置
     """
-    return self.set_config('watermark', watermark_config)
+    try:
+      # 深拷贝以避免修改原始数据
+      config = copy.deepcopy(watermark_config)
+
+      # 更新到配置中
+      if 'watermark' not in self.config:
+        self.config['watermark'] = {}
+
+      # 逐个键更新，而不是整体替换
+      for key, value in config.items():
+        self.config['watermark'][key] = value
+
+      return True
+    except Exception as e:
+      self.logger.error(f"设置水印配置失败: {str(e)}")
+      return False
 
   def save_template(self, name: str, description: str = '') -> bool:
     """
@@ -298,7 +330,18 @@ class ConfigManager:
         self.logger.error(f"模板不存在: {name}")
         return False
 
-      template_config = self.templates[name]['config']
+      # 获取模板配置
+      template_data = self.templates.get(name)
+      if not template_data:
+        self.logger.error(f"模板数据为空: {name}")
+        return False
+
+      template_config = template_data.get('config', {})
+      if not template_config:
+        self.logger.error(f"模板配置为空: {name}")
+        return False
+
+      # 应用配置
       success = self.set_watermark_config(template_config)
 
       if success:
@@ -307,7 +350,9 @@ class ConfigManager:
       return success
 
     except Exception as e:
+      import traceback
       self.logger.error(f"加载模板失败: {str(e)}")
+      self.logger.error(f"错误堆栈: {traceback.format_exc()}")
       return False
 
   def delete_template(self, name: str) -> bool:
@@ -336,6 +381,27 @@ class ConfigManager:
     except Exception as e:
       self.logger.error(f"删除模板失败: {str(e)}")
       return False
+
+  def get_template(self, name: str) -> Optional[Dict[str, Any]]:
+    """
+    获取模板配置
+
+    Args:
+        name: 模板名称
+
+    Returns:
+        模板配置字典，如果模板不存在则返回 None
+    """
+    try:
+      if name not in self.templates:
+        self.logger.error(f"模板不存在: {name}")
+        return None
+
+      return self.templates[name]['config']
+
+    except Exception as e:
+      self.logger.error(f"获取模板配置失败: {str(e)}")
+      return None
 
   def get_template_list(self) -> List[Dict[str, Any]]:
     """

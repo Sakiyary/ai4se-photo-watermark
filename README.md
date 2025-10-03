@@ -1,5 +1,15 @@
 # 图片水印处理桌面应用
 
+![Python](https://img.shields.io/badge/Python-3.11.4-blue)
+![Progress](https://img.shields.io/badge/进度-92%25-yellow)
+![Status](https://img.shields.io/badge/状态-开发中-orange)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+> **📊 项目状态**: 核心功能基本完成，水印自由拖拽定位功能开发中  
+> **🔗 快速链接**: [功能状态](FEATURE_STATUS.md) | [工作计划](WORKPLAN.md) | [需求文档](PRD.md)
+
+---
+
 ## 项目简介
 
 这是一个基于 Python 开发的跨平台桌面水印处理应用程序，支持为图片批量添加文本或图片水印，提供直观的图形界面和实时预览功能。

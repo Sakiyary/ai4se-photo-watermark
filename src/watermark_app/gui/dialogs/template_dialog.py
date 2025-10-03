@@ -124,9 +124,9 @@ class TemplateDialog:
     """加载模板列表"""
     try:
       self.template_listbox.delete(0, tk.END)
-      templates = self.config_manager.get_all_templates()
-      for name in templates:
-        self.template_listbox.insert(tk.END, name)
+      templates = self.config_manager.get_template_list()
+      for template in templates:
+        self.template_listbox.insert(tk.END, template['name'])
     except Exception as e:
       self.logger.error(f"加载模板列表失败: {str(e)}")
 

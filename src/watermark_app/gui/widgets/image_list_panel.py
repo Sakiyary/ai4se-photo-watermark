@@ -84,16 +84,18 @@ class ImageListPanel:
       self.tree.heading('format', text='格式')
       self.tree.heading('status', text='状态')
 
-      # 设置列宽
-      self.tree.column('#0', width=70, minwidth=70, anchor='center')
-      self.tree.column('name', width=180, minwidth=120)
-      self.tree.column('size', width=80, minwidth=60)
-      self.tree.column('format', width=60, minwidth=40)
-      self.tree.column('status', width=80, minwidth=60)
+      # 设置列宽和对齐方式（增加缩略图列宽度以实现居中效果）
+      self.tree.column('#0', width=80, minwidth=80, stretch=False)  # 增加宽度
+      self.tree.column('name', width=180, minwidth=120, anchor=tk.W)
+      self.tree.column('size', width=80, minwidth=60, anchor=tk.CENTER)
+      self.tree.column('format', width=60, minwidth=40, anchor=tk.CENTER)
+      self.tree.column('status', width=80, minwidth=60, anchor=tk.CENTER)
 
       # 设置行高适配缩略图（减小到适合的高度）
       style = ttk.Style()
-      style.configure("Treeview", rowheight=60)      # 滚动条
+      style.configure("Treeview", rowheight=60)
+
+      # 滚动条
       scrollbar = ttk.Scrollbar(
           list_frame, orient=tk.VERTICAL, command=self.tree.yview)
       self.tree.configure(yscrollcommand=scrollbar.set)
@@ -130,11 +132,14 @@ class ImageListPanel:
     """创建占位图像"""
     try:
       # 创建加载中图像
-      loading_img = Image.new('RGB', self.thumbnail_size, '#E0E0E0')
+      canvas_width = self.thumbnail_size[0]
+      loading_img = Image.new(
+          'RGB', (canvas_width, self.thumbnail_size[1]), '#E0E0E0')
       self.loading_image = ImageTk.PhotoImage(loading_img)
 
       # 创建错误图像
-      error_img = Image.new('RGB', self.thumbnail_size, '#FFE0E0')
+      error_img = Image.new(
+          'RGB', (canvas_width, self.thumbnail_size[1]), '#FFE0E0')
       self.error_image = ImageTk.PhotoImage(error_img)
 
     except Exception as e:
@@ -165,13 +170,19 @@ class ImageListPanel:
           # 生成缩略图
           img.thumbnail(self.thumbnail_size, Image.Resampling.LANCZOS)
 
-          # 创建固定尺寸的背景
-          thumb_img = Image.new('RGB', self.thumbnail_size, '#FFFFFF')
+          # 创建更宽的背景，右侧添加额外空间，使用透明背景
+          canvas_width = self.thumbnail_size[0] + 24  # 右侧增加20像素空白
+          thumb_img = Image.new(
+              'RGBA', (canvas_width, self.thumbnail_size[1]), (0, 0, 0, 0))  # 透明背景
 
-          # 居中放置缩略图
-          offset = ((self.thumbnail_size[0] - img.size[0]) // 2,
-                    (self.thumbnail_size[1] - img.size[1]) // 2)
-          thumb_img.paste(img, offset)
+          # 将原图转换为RGBA以支持透明
+          if img.mode != 'RGBA':
+            img = img.convert('RGBA')
+
+          # 将缩略图放在左侧，让其自然居中
+          x_offset = (self.thumbnail_size[0] - img.size[0]) // 2
+          y_offset = (self.thumbnail_size[1] - img.size[1]) // 2
+          thumb_img.paste(img, (x_offset, y_offset), img)
 
           # 转换为Tkinter图像
           photo = ImageTk.PhotoImage(thumb_img)

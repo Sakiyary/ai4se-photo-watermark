@@ -16,16 +16,19 @@ class PositionControlPanel:
   """位置控制面板"""
 
   def __init__(self, parent: tk.Widget,
-               on_position_change: Optional[Callable[[], None]] = None):
+               on_position_change: Optional[Callable[[], None]] = None,
+               config_manager=None):
     """
     初始化位置控制面板
 
     Args:
         parent: 父容器
         on_position_change: 位置改变回调
+        config_manager: 配置管理器
     """
     self.parent = parent
     self.on_position_change = on_position_change
+    self.config_manager = config_manager
     self.logger = logging.getLogger(__name__)
 
     # 位置按钮
@@ -79,6 +82,10 @@ class PositionControlPanel:
         btn.grid(row=row, column=col, padx=2, pady=2, sticky="nsew")
         self.position_buttons[pos_id] = btn
 
+      # 重置位置按钮（放在位置选择框内）
+      ttk.Button(position_frame, text="重置位置",
+                 command=self._reset_position).pack(pady=5)
+
       # 边距设置
       margin_frame = ttk.LabelFrame(main_frame, text="边距设置")
       margin_frame.pack(fill=tk.X, pady=5)
@@ -101,6 +108,10 @@ class PositionControlPanel:
                               textvariable=self.v_margin, command=self._on_setting_change)
       v_spinbox.pack(side=tk.RIGHT)
 
+      # 重置边距按钮（放在边距设置框内）
+      ttk.Button(margin_frame, text="重置边距",
+                 command=self._reset_margins).pack(pady=5)
+
       # 旋转设置
       rotation_frame = ttk.LabelFrame(main_frame, text="旋转设置")
       rotation_frame.pack(fill=tk.X, pady=5)
@@ -117,15 +128,9 @@ class PositionControlPanel:
       self.rotation_label = ttk.Label(rotation_frame, text="0°")
       self.rotation_label.pack()
 
-      # 重置按钮
-      reset_frame = ttk.Frame(main_frame)
-      reset_frame.pack(fill=tk.X, pady=5)
-      ttk.Button(reset_frame, text="重置位置",
-                 command=self._reset_position).pack(side=tk.LEFT)
-      ttk.Button(reset_frame, text="重置边距", command=self._reset_margins).pack(
-          side=tk.LEFT, padx=5)
-      ttk.Button(reset_frame, text="重置旋转",
-                 command=self._reset_rotation).pack(side=tk.LEFT)
+      # 重置旋转按钮（放在旋转设置框内）
+      ttk.Button(rotation_frame, text="重置旋转",
+                 command=self._reset_rotation).pack(pady=5)
 
     except Exception as e:
       self.logger.error(f"创建位置控制界面失败: {str(e)}")
@@ -151,7 +156,12 @@ class PositionControlPanel:
   def _reset_position(self):
     """重置位置"""
     try:
-      self.selected_position.set("bottom_right")
+      if self.config_manager:
+        from ...core.config_manager import ConfigManager
+        default_position = ConfigManager.DEFAULT_CONFIG['watermark']['position']['preset']
+        self.selected_position.set(default_position)
+      else:
+        self.selected_position.set("bottom_right")
       self._notify_change()
     except Exception as e:
       self.logger.error(f"重置位置失败: {str(e)}")
@@ -159,8 +169,14 @@ class PositionControlPanel:
   def _reset_margins(self):
     """重置边距"""
     try:
-      self.h_margin.set(20)
-      self.v_margin.set(20)
+      if self.config_manager:
+        from ...core.config_manager import ConfigManager
+        default_margins = ConfigManager.DEFAULT_CONFIG['watermark']['position']['margins']
+        self.h_margin.set(default_margins.get('horizontal', 20))
+        self.v_margin.set(default_margins.get('vertical', 20))
+      else:
+        self.h_margin.set(20)
+        self.v_margin.set(20)
       self._notify_change()
     except Exception as e:
       self.logger.error(f"重置边距失败: {str(e)}")
@@ -168,8 +184,15 @@ class PositionControlPanel:
   def _reset_rotation(self):
     """重置旋转"""
     try:
-      self.rotation.set(0)
-      self.rotation_label.config(text="0°")
+      if self.config_manager:
+        from ...core.config_manager import ConfigManager
+        default_rotation = int(
+            ConfigManager.DEFAULT_CONFIG['watermark']['position']['rotation'])
+        self.rotation.set(default_rotation)
+        self.rotation_label.config(text=f"{default_rotation}°")
+      else:
+        self.rotation.set(0)
+        self.rotation_label.config(text="0°")
       self._notify_change()
     except Exception as e:
       self.logger.error(f"重置旋转失败: {str(e)}")

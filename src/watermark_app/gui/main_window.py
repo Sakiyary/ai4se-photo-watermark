@@ -5,21 +5,24 @@
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, simpledialog
 import logging
 import os
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pathlib import Path
 from tkinterdnd2 import DND_FILES, TkinterDnD
 
 from ..core import ImageProcessor, WatermarkProcessor, FileManager, ConfigManager, ImageExporter
 from ..utils.constants import *
+from ..utils.font_mapper import get_font_path
 from ..utils.helpers import center_window, get_system_fonts
 from .widgets.image_list_panel import ImageListPanel
 from .widgets.preview_panel import PreviewPanel
 from .widgets.watermark_control_panel import WatermarkControlPanel
 from .widgets.position_control_panel import PositionControlPanel
 from .dialogs.progress_dialog import ProgressDialog
+from .dialogs.export_dialog import ExportDialog
+from .dialogs.template_dialog import TemplateDialog
 
 logger = logging.getLogger(__name__)
 
@@ -239,7 +242,8 @@ class MainWindow:
       control_notebook.add(watermark_frame, text="水印设置")
       self.watermark_control_panel = WatermarkControlPanel(
           watermark_frame,
-          on_watermark_change=self._on_watermark_change
+          on_watermark_change=self._on_watermark_change,
+          config_manager=self.config_manager
       )
 
       # 位置控制面板
@@ -247,7 +251,8 @@ class MainWindow:
       control_notebook.add(position_frame, text="位置控制")
       self.position_control_panel = PositionControlPanel(
           position_frame,
-          on_position_change=self._on_watermark_position_change
+          on_position_change=self._on_watermark_position_change,
+          config_manager=self.config_manager
       )
 
     except Exception as e:
@@ -500,38 +505,85 @@ class MainWindow:
         # 文本水印
         text_config = watermark_config.get('text', {})
         text_content = text_config.get('content', '水印文本')
+        font_family = text_config.get('font_family', 'Arial')
         font_size = text_config.get('font_size', 36)
+        color_hex = text_config.get('color', '#FFFFFF')
         opacity = text_config.get('opacity', 0.8)
+        shadow_enabled = text_config.get('shadow_enabled', True)
+        stroke_enabled = text_config.get('stroke_enabled', False)
+        stroke_width = text_config.get(
+            'stroke_width', 2) if stroke_enabled else 0
+        bold = text_config.get('bold', False)
+        italic = text_config.get('italic', False)
 
-        # 计算透明度（0-255）
-        alpha = int(opacity * 255)
-        color = (255, 255, 255, alpha)  # 白色文本
-        shadow_color = (0, 0, 0, alpha // 2)  # 半透明阴影
+        # 转换颜色格式
+        try:
+          # 将十六进制颜色转换为RGB
+          color_rgb = tuple(int(color_hex[i:i+2], 16) for i in (1, 3, 5))
+          alpha = int(opacity * 255)
+          color = (*color_rgb, alpha)
+        except:
+          alpha = int(opacity * 255)
+          color = (255, 255, 255, alpha)
+
+        # 阴影颜色
+        shadow_color = (0, 0, 0, alpha // 2) if shadow_enabled else None
+
+        # 描边颜色
+        stroke_color = (0, 0, 0, 255) if stroke_enabled else None
+
+        # 获取字体路径或字体名称
+        # 优先使用字体映射器（支持粗体斜体）
+        font_path = get_font_path(font_family, bold, italic)
+        if not font_path:
+            # 如果映射器没找到，尝试原有方法
+          font_path = self._get_font_path(font_family)
+        # 如果仍然没有找到字体文件，直接使用字体名称
+        if not font_path:
+          font_path = font_family
+
+        self.logger.debug(f"字体映射: {font_family} -> {font_path}")
 
         watermark = self.watermark_processor.create_text_watermark(
             text=text_content,
+            font_path=font_path,
             font_size=font_size,
             color=color,
-            shadow=True,
+            shadow=shadow_enabled,
             shadow_offset=(2, 2),
-            shadow_color=shadow_color
+            shadow_color=shadow_color,
+            stroke_width=stroke_width,
+            stroke_color=stroke_color,
+            bold=bold,
+            italic=italic
         )
 
       elif watermark_config.get('type') == 'image':
         # 图片水印
         image_config = watermark_config.get('image', {})
         image_path = image_config.get('path', '')
+        scale = image_config.get('scale', 0.25)  # 默认25%
         opacity = image_config.get('opacity', 1.0)
 
         if image_path and os.path.exists(image_path):
-          # 计算水印尺寸（不超过原图的1/4）
-          max_size = (result_image.width // 4, result_image.height // 4)
+          # 根据缩放比例计算水印尺寸
+          max_width = int(result_image.width * scale)
+          max_height = int(result_image.height * scale)
+          max_size = (max_width, max_height)
+
           watermark = self.watermark_processor.load_image_watermark(
               image_path, size=max_size, opacity=opacity
           )
 
       # 如果成功生成水印，应用到图像上
       if watermark:
+        # 应用旋转（如果有）
+        rotation = position_config.get('rotation', 0)
+        if rotation != 0:
+          watermark = self.watermark_processor.rotate_watermark(
+              watermark, rotation)
+          self.logger.info(f"水印旋转 {rotation}°")
+
         # 计算水印位置
         position = self._calculate_watermark_position(
             result_image.size, watermark.size, position_config
@@ -564,23 +616,27 @@ class MainWindow:
       img_width, img_height = image_size
       wm_width, wm_height = watermark_size
 
-      # 边距
-      margin = 20
+      # 从配置获取边距，支持水平/垂直边距
+      margins = position_config.get('margins', {})
+      h_margin = margins.get('horizontal', 20) if isinstance(
+          margins, dict) else 20
+      v_margin = margins.get('vertical', 20) if isinstance(
+          margins, dict) else 20
 
       # 获取位置配置
       position = position_config.get('position', 'bottom_right')
 
       # 根据位置计算坐标
       position_map = {
-          'top_left': (margin, margin),
-          'top_center': ((img_width - wm_width) // 2, margin),
-          'top_right': (img_width - wm_width - margin, margin),
-          'middle_left': (margin, (img_height - wm_height) // 2),
+          'top_left': (h_margin, v_margin),
+          'top_center': ((img_width - wm_width) // 2, v_margin),
+          'top_right': (img_width - wm_width - h_margin, v_margin),
+          'middle_left': (h_margin, (img_height - wm_height) // 2),
           'center': ((img_width - wm_width) // 2, (img_height - wm_height) // 2),
-          'middle_right': (img_width - wm_width - margin, (img_height - wm_height) // 2),
-          'bottom_left': (margin, img_height - wm_height - margin),
-          'bottom_center': ((img_width - wm_width) // 2, img_height - wm_height - margin),
-          'bottom_right': (img_width - wm_width - margin, img_height - wm_height - margin)
+          'middle_right': (img_width - wm_width - h_margin, (img_height - wm_height) // 2),
+          'bottom_left': (h_margin, img_height - wm_height - v_margin),
+          'bottom_center': ((img_width - wm_width) // 2, img_height - wm_height - v_margin),
+          'bottom_right': (img_width - wm_width - h_margin, img_height - wm_height - v_margin)
       }
 
       return position_map.get(position, position_map['bottom_right'])
@@ -588,6 +644,118 @@ class MainWindow:
     except Exception as e:
       self.logger.error(f"计算水印位置失败: {str(e)}")
       return (20, 20)
+
+  def _get_font_path(self, font_family: str) -> Optional[str]:
+    """
+    获取字体文件路径（跨平台支持）
+
+    Args:
+        font_family: 字体族名
+
+    Returns:
+        字体文件路径，如果找不到则返回None
+    """
+    try:
+      import platform
+      import glob
+
+      # 跨平台字体目录
+      font_dirs = []
+      system = platform.system()
+
+      if system == "Windows":
+        font_dirs = [
+            "C:/Windows/Fonts/",
+            os.path.expanduser("~/AppData/Local/Microsoft/Windows/Fonts/")
+        ]
+      elif system == "Darwin":  # macOS
+        font_dirs = [
+            "/System/Library/Fonts/",
+            "/Library/Fonts/",
+            os.path.expanduser("~/Library/Fonts/")
+        ]
+      else:  # Linux和其他Unix系统
+        font_dirs = [
+            "/usr/share/fonts/",
+            "/usr/local/share/fonts/",
+            os.path.expanduser("~/.fonts/"),
+            os.path.expanduser("~/.local/share/fonts/")
+        ]
+
+      # 常见字体文件扩展名
+      font_extensions = ['*.ttf', '*.ttc', '*.otf', '*.woff', '*.woff2']
+
+      # 搜索字体文件
+      for font_dir in font_dirs:
+        if not os.path.exists(font_dir):
+          continue
+
+        for ext in font_extensions:
+          # 递归搜索字体文件
+          pattern = os.path.join(font_dir, "**", ext)
+          for font_file in glob.glob(pattern, recursive=True):
+            font_filename = os.path.basename(font_file)
+
+            # 多种匹配方式
+            if self._is_font_match(font_family, font_filename):
+              self.logger.info(f"找到字体文件: {font_family} -> {font_file}")
+              return font_file
+
+      # 如果没有找到具体文件，返回None让PIL使用字体名称
+      self.logger.debug(f"未找到字体文件，将使用字体名称: {font_family}")
+      return None
+
+    except Exception as e:
+      self.logger.error(f"获取字体路径失败: {str(e)}")
+      return None
+
+  def _is_font_match(self, font_family: str, filename: str) -> bool:
+    """检查字体文件名是否匹配字体族名"""
+    try:
+      # 字体名称映射表（用于匹配常见的字体文件名）
+      font_mapping = {
+          '微软雅黑': ['msyh', 'microsoftyahei', 'yahei'],
+          '宋体': ['simsun', 'nsimsun'],
+          '黑体': ['simhei', 'hei'],
+          '仿宋': ['simfang', 'fangsong'],
+          '楷体': ['simkai', 'kai'],
+          'arial': ['arial'],
+          'times new roman': ['times', 'timesnr'],
+          'calibri': ['calibri'],
+          'helvetica': ['helvetica', 'helv'],
+          'courier new': ['courier', 'cour']
+      }
+
+      font_key = font_family.lower()
+      filename_lower = filename.lower()
+
+      # 1. 检查映射表
+      if font_key in font_mapping:
+        return any(name in filename_lower for name in font_mapping[font_key])
+
+      # 2. 直接名称匹配（包含中文）
+      if font_family in filename:
+        return True
+
+      # 3. 处理中文字体名称的特殊情况
+      # 汉仪字体特殊处理
+      if '汉仪' in font_family:
+        if '汉仪' in filename:
+          # 提取字体名称的关键部分
+          font_parts = font_family.replace(
+              '汉仪', '').replace(' ', '').replace('-', '')
+          return font_parts in filename.replace(' ', '').replace('-', '')
+
+      # 4. 去除空格和特殊字符的匹配
+      clean_font = font_key.replace(' ', '').replace('-', '').replace('_', '')
+      clean_filename = filename_lower.replace(
+          ' ', '').replace('-', '').replace('_', '')
+
+      return clean_font in clean_filename or clean_filename.startswith(clean_font)
+
+    except Exception as e:
+      self.logger.debug(f"字体匹配错误: {e}")
+      return False
 
   def _on_drop_files(self, event):
     """处理拖拽文件事件"""
@@ -773,11 +941,273 @@ class MainWindow:
 
   def _export_current_image(self):
     """导出当前图片"""
-    pass
+    try:
+      # 检查是否有预览图像（使用current_preview_image）
+      if not self.current_preview_image:
+        messagebox.showwarning("警告", "请先选择要导出的图片")
+        return
+
+      # 检查是否有当前选中的图片信息
+      current_file = self.file_manager.get_file_by_index(
+          self.current_image_index)
+      if not current_file:
+        messagebox.showwarning("警告", "无法获取当前图片信息")
+        return
+
+      # 获取源文件夹路径
+      source_folder = str(Path(current_file['path']).parent)
+      source_folders = {source_folder}
+
+      # 创建导出对话框
+      export_dialog = ExportDialog(
+          self.root,
+          title="导出当前图片",
+          source_folders=source_folders,
+          config_manager=self.config_manager
+      )
+
+      # 等待用户配置
+      self.root.wait_window(export_dialog.dialog)
+
+      # 获取导出配置
+      export_config = export_dialog.result
+      if not export_config:
+        return  # 用户取消
+
+      # 获取当前预览的带水印图像（使用current_preview_image）
+      watermarked_image = self.current_preview_image
+
+      # 构建输出文件名
+      output_dir = export_config.get('output_dir', '')
+      naming_mode = export_config.get('naming_mode', 'suffix')
+
+      # 从config读取默认前缀/后缀
+      output_config = self.config_manager.get_config('watermark.output') or {}
+      default_prefix = output_config.get('naming_prefix', 'wm_')
+      default_suffix = output_config.get('naming_suffix', '_watermarked')
+
+      custom_prefix = export_config.get('custom_prefix', default_prefix)
+      custom_suffix = export_config.get('custom_suffix', default_suffix)
+
+      # 获取原文件名
+      original_name = Path(current_file['path']).stem
+      output_format = export_config.get('format', 'png')
+
+      # 确定输出格式
+      if output_format == 'original':
+        # 使用原始文件格式
+        original_ext = Path(current_file['path']).suffix.lower()
+        # 将扩展名转换为格式代码
+        ext_to_format = {'.jpg': 'jpg', '.jpeg': 'jpg', '.png': 'png',
+                         '.bmp': 'bmp', '.tiff': 'tiff', '.tif': 'tiff'}
+        output_format = ext_to_format.get(original_ext, 'png')
+
+      # 根据命名模式生成文件名
+      if naming_mode == 'prefix':
+        output_name = f"{custom_prefix}{original_name}.{output_format}"
+      elif naming_mode == 'suffix':
+        output_name = f"{original_name}{custom_suffix}.{output_format}"
+      else:  # overwrite
+        output_name = f"{original_name}.{output_format}"
+
+      output_path = os.path.join(output_dir, output_name)
+
+      # 使用ImageExporter导出
+      success = self.image_exporter.export_image(
+          image=watermarked_image,
+          output_path=output_path,
+          format_type=output_format,
+          quality=export_config.get('quality', 85),
+          resize_config=export_config.get('resize', None)
+      )
+
+      if success:
+        self.logger.info(f"成功导出图片: {output_path}")
+        messagebox.showinfo("成功", f"图片已成功导出到:\n{output_path}")
+      else:
+        self.logger.error(f"导出图片失败: {output_path}")
+        messagebox.showerror("错误", "导出图片失败，请检查输出路径和权限")
+
+    except Exception as e:
+      self.logger.error(f"导出当前图片失败: {str(e)}")
+      messagebox.showerror("错误", f"导出失败: {str(e)}")
 
   def _export_all_images(self):
     """批量导出"""
-    pass
+    try:
+      # 检查是否有图片
+      files = self.file_manager.get_file_list()
+      if not files:
+        messagebox.showwarning("警告", "请先添加要导出的图片")
+        return
+
+      # 获取所有源文件夹路径
+      source_folders = set()
+      for file_info in files:
+        source_folder = str(Path(file_info['path']).parent)
+        source_folders.add(source_folder)
+
+      # 创建导出对话框
+      export_dialog = ExportDialog(
+          self.root,
+          title="批量导出图片",
+          source_folders=source_folders,
+          config_manager=self.config_manager
+      )
+
+      # 等待用户配置
+      self.root.wait_window(export_dialog.dialog)
+
+      # 获取导出配置
+      export_config = export_dialog.result
+      if not export_config:
+        return  # 用户取消
+
+      # 获取配置
+      output_dir = export_config.get('output_dir', '')
+      naming_mode = export_config.get('naming_mode', 'suffix')
+
+      # 从config读取默认前缀/后缀
+      output_config = self.config_manager.get_config('watermark.output') or {}
+      default_prefix = output_config.get('naming_prefix', 'wm_')
+      default_suffix = output_config.get('naming_suffix', '_watermarked')
+
+      custom_prefix = export_config.get('custom_prefix', default_prefix)
+      custom_suffix = export_config.get('custom_suffix', default_suffix)
+      output_format = export_config.get('format', 'png')
+      quality = export_config.get('quality', 85)
+      resize_config = export_config.get('resize', None)
+
+      # 创建进度对话框
+      progress_dialog = ProgressDialog(
+          self.root,
+          title="批量导出"
+      )
+
+      # 统计信息
+      success_count = 0
+      failed_count = 0
+      failed_files = []
+
+      # 获取当前水印和位置配置
+      watermark_config = self._get_current_watermark_config()
+      position_config = self._get_current_position_config()
+
+      # 遍历所有文件
+      for index, file_info in enumerate(files):
+        # 检查是否取消
+        if progress_dialog.is_cancelled():
+          self.logger.info("用户取消批量导出")
+          break
+
+        try:
+          # 更新进度
+          file_name = Path(file_info['path']).name
+          progress_percentage = ((index + 1) / len(files)) * 100
+          progress_dialog.update_progress(
+              percentage=progress_percentage,
+              status=f"正在处理: {file_name} ({index + 1}/{len(files)})"
+          )
+
+          # 加载图片
+          original_image = self.image_processor.load_image(file_info['path'])
+          if not original_image:
+            failed_count += 1
+            failed_files.append(file_name)
+            continue
+
+          # 应用水印
+          watermarked_image = self._apply_watermark_to_image(
+              original_image, watermark_config, position_config
+          )
+
+          # 确定输出格式
+          if output_format == 'original':
+            # 使用原始文件格式
+            original_ext = Path(file_info['path']).suffix.lower()
+            # 将扩展名转换为格式代码
+            ext_to_format = {'.jpg': 'jpg', '.jpeg': 'jpg', '.png': 'png',
+                             '.bmp': 'bmp', '.tiff': 'tiff', '.tif': 'tiff'}
+            current_format = ext_to_format.get(original_ext, 'png')
+          else:
+            current_format = output_format
+
+          # 构建输出文件名
+          original_name = Path(file_info['path']).stem
+
+          if naming_mode == 'prefix':
+            output_name = f"{custom_prefix}{original_name}.{current_format}"
+          elif naming_mode == 'suffix':
+            output_name = f"{original_name}{custom_suffix}.{current_format}"
+          else:  # overwrite
+            output_name = f"{original_name}.{current_format}"
+
+          output_path = os.path.join(output_dir, output_name)
+
+          # 导出图片
+          if self.image_exporter.export_image(
+              image=watermarked_image,
+              output_path=output_path,
+              format_type=current_format,
+              quality=quality,
+              resize_config=resize_config
+          ):
+            success_count += 1
+            self.logger.info(f"成功导出: {output_name}")
+          else:
+            failed_count += 1
+            failed_files.append(file_name)
+            self.logger.error(f"导出失败: {file_name}")
+
+        except Exception as e:
+          failed_count += 1
+          failed_files.append(file_name)
+          self.logger.error(f"处理文件失败 {file_name}: {str(e)}")
+
+      # 关闭进度对话框
+      progress_dialog.close()
+
+      # 显示结果统计
+      result_message = f"批量导出完成!\n\n"
+      result_message += f"成功: {success_count} 个文件\n"
+      result_message += f"失败: {failed_count} 个文件\n"
+      result_message += f"输出目录: {output_dir}"
+
+      if failed_files:
+        result_message += f"\n\n失败的文件:\n" + "\n".join(failed_files[:5])
+        if len(failed_files) > 5:
+          result_message += f"\n... 还有 {len(failed_files) - 5} 个文件"
+
+      if failed_count > 0:
+        messagebox.showwarning("批量导出完成", result_message)
+      else:
+        messagebox.showinfo("批量导出完成", result_message)
+
+      self.logger.info(f"批量导出完成: 成功{success_count}, 失败{failed_count}")
+
+    except Exception as e:
+      self.logger.error(f"批量导出失败: {str(e)}")
+      messagebox.showerror("错误", f"批量导出失败: {str(e)}")
+
+  def _get_current_watermark_config(self) -> Dict[str, Any]:
+    """获取当前水印配置"""
+    try:
+      if self.watermark_control_panel:
+        return self.watermark_control_panel.get_config()
+      return {}
+    except Exception as e:
+      self.logger.error(f"获取水印配置失败: {str(e)}")
+      return {}
+
+  def _get_current_position_config(self) -> Dict[str, Any]:
+    """获取当前位置配置"""
+    try:
+      if self.position_control_panel:
+        return self.position_control_panel.get_config()
+      return {}
+    except Exception as e:
+      self.logger.error(f"获取位置配置失败: {str(e)}")
+      return {}
 
   # 其他方法（后续实现）
 
@@ -788,13 +1218,112 @@ class MainWindow:
     pass
 
   def _save_watermark_template(self):
-    pass
+    """保存水印模板"""
+    try:
+      # 获取模板名称
+      template_name = tk.simpledialog.askstring(
+          "保存模板",
+          "请输入模板名称:",
+          parent=self.root
+      )
+
+      if not template_name:
+        return  # 用户取消
+
+      # 收集当前所有配置
+      watermark_config = self._get_current_watermark_config()
+      position_config = self._get_current_position_config()
+
+      # 合并配置
+      template_config = {
+          'type': watermark_config.get('type', 'text'),
+          'text': watermark_config.get('text', {}),
+          'image': watermark_config.get('image', {}),
+          'position': position_config
+      }
+
+      # 先保存到config_manager的当前配置
+      self.config_manager.set_watermark_config(template_config)
+
+      # 保存模板（save_template会从当前配置中读取）
+      success = self.config_manager.save_template(template_name)
+
+      if success:
+        self.logger.info(f"成功保存模板: {template_name}")
+        messagebox.showinfo("成功", f"模板 '{template_name}' 已保存")
+      else:
+        self.logger.error(f"保存模板失败: {template_name}")
+        messagebox.showerror("错误", "保存模板失败")
+
+    except Exception as e:
+      self.logger.error(f"保存模板失败: {str(e)}")
+      messagebox.showerror("错误", f"保存模板失败: {str(e)}")
 
   def _load_watermark_template(self):
-    pass
+    """加载水印模板"""
+    try:
+      # 创建模板选择对话框
+      template_dialog = TemplateDialog(
+          self.root,
+          self.config_manager,
+          title="选择模板"
+      )
+
+      # 等待用户选择
+      self.root.wait_window(template_dialog.dialog)
+
+      # 获取选择的模板
+      result = template_dialog.result
+      if not result:
+        return  # 用户取消
+
+      # 解析结果
+      action, template_name, template_config = result
+
+      if action == 'load' and template_config:
+        # 应用模板配置
+        if self.watermark_control_panel:
+          # 应用水印类型和文本/图片配置
+          watermark_type = template_config.get('type', 'text')
+          self.watermark_control_panel.load_config({
+              'type': watermark_type,
+              'text': template_config.get('text', {}),
+              'image': template_config.get('image', {})
+          })
+
+        # 应用位置配置
+        position_config = template_config.get('position', {})
+        if position_config and self.position_control_panel:
+          self.position_control_panel.load_config(position_config)
+
+        # 刷新预览
+        self._update_preview()
+
+        self.logger.info(f"成功加载模板: {template_name}")
+        messagebox.showinfo("成功", f"已加载模板 '{template_name}'")
+
+    except Exception as e:
+      self.logger.error(f"加载模板失败: {str(e)}")
+      messagebox.showerror("错误", f"加载模板失败: {str(e)}")
 
   def _manage_templates(self):
-    pass
+    """管理模板"""
+    try:
+      # 创建模板管理对话框
+      template_dialog = TemplateDialog(
+          self.root,
+          self.config_manager,
+          title="模板管理"
+      )
+
+      # 等待对话框关闭
+      self.root.wait_window(template_dialog.dialog)
+
+      self.logger.info("模板管理对话框已关闭")
+
+    except Exception as e:
+      self.logger.error(f"模板管理失败: {str(e)}")
+      messagebox.showerror("错误", f"模板管理失败: {str(e)}")
 
   def _show_help(self):
     pass

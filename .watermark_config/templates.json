@@ -1,0 +1,47 @@
+{
+  "111": {
+    "name": "111",
+    "description": "",
+    "config": {
+      "text": {
+        "content": "watermark",
+        "font_family": "arial",
+        "font_size": 36,
+        "color": "#ffffff",
+        "opacity": 0.8,
+        "shadow_enabled": true,
+        "stroke_enabled": false,
+        "stroke_width": 1,
+        "bold": false,
+        "italic": false
+      },
+      "image": {
+        "path": "",
+        "scale": 0.25,
+        "opacity": 1.0
+      },
+      "position": {
+        "position": "bottom_right",
+        "margins": {
+          "horizontal": 48,
+          "vertical": 36
+        },
+        "rotation": 0
+      },
+      "output": {
+        "format": "png",
+        "quality": 85,
+        "resize_enabled": false,
+        "resize_width": 0,
+        "resize_height": 0,
+        "resize_percentage": 100,
+        "naming_rule": "suffix",
+        "naming_prefix": "wm_",
+        "naming_suffix": "_watermarked"
+      },
+      "type": "text"
+    },
+    "created_time": 1759451329.6224046,
+    "modified_time": 1759451329.6224046
+  }
+}

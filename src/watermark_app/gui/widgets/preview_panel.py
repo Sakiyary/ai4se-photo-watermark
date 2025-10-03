@@ -62,12 +62,16 @@ class PreviewPanel:
       title_label = ttk.Label(main_frame, text="预览", font=('Arial', 12, 'bold'))
       title_label.pack(pady=5)
 
-      # 工具栏
-      toolbar = ttk.Frame(main_frame)
-      toolbar.pack(fill=tk.X, padx=5, pady=2)
+      # 工具栏容器（分为两行）
+      toolbar_container = ttk.Frame(main_frame)
+      toolbar_container.pack(fill=tk.X, padx=5, pady=2)
+
+      # 第一行：控制按钮
+      control_toolbar = ttk.Frame(toolbar_container)
+      control_toolbar.pack(fill=tk.X, pady=(0, 3))
 
       # 图片切换按钮
-      nav_frame = ttk.Frame(toolbar)
+      nav_frame = ttk.Frame(control_toolbar)
       nav_frame.pack(side=tk.LEFT)
 
       self.prev_button = ttk.Button(nav_frame, text="◀ 上一张",
@@ -79,11 +83,11 @@ class PreviewPanel:
       self.next_button.pack(side=tk.LEFT, padx=2)
 
       # 分隔符
-      ttk.Separator(toolbar, orient=tk.VERTICAL).pack(
+      ttk.Separator(control_toolbar, orient=tk.VERTICAL).pack(
           side=tk.LEFT, fill=tk.Y, padx=10)
 
       # 缩放按钮
-      zoom_frame = ttk.Frame(toolbar)
+      zoom_frame = ttk.Frame(control_toolbar)
       zoom_frame.pack(side=tk.LEFT)
 
       ttk.Button(zoom_frame, text="放大", command=self._zoom_in,
@@ -95,17 +99,19 @@ class PreviewPanel:
       ttk.Button(zoom_frame, text="原始", command=self._actual_size,
                  width=8).pack(side=tk.LEFT, padx=2)
 
-      # 右侧信息区
-      info_frame = ttk.Frame(toolbar)
-      info_frame.pack(side=tk.RIGHT)
-
-      # 缩放比例显示
-      self.scale_label = ttk.Label(info_frame, text="100%")
+      # 缩放比例显示（放在控制按钮行的右侧）
+      self.scale_label = ttk.Label(
+          control_toolbar, text="100%", font=('Arial', 10, 'bold'))
       self.scale_label.pack(side=tk.RIGHT, padx=5)
 
+      # 第二行：信息显示
+      info_toolbar = ttk.Frame(toolbar_container)
+      info_toolbar.pack(fill=tk.X)
+
       # 图片信息显示
-      self.info_label = ttk.Label(info_frame, text="", foreground='gray')
-      self.info_label.pack(side=tk.RIGHT, padx=10)
+      self.info_label = ttk.Label(
+          info_toolbar, text="", foreground='gray', anchor=tk.W)
+      self.info_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
 
       # 画布容器
       canvas_frame = ttk.Frame(main_frame)
